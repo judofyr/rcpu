@@ -147,6 +147,15 @@ module RCPU
         @registers[:O] = ((va<<16)>>vb)&0xffff
         set(a, (va >> vb) & 0xFFFF)
 
+      when 0x9 # AND
+        set(a, get(a) & get(b))
+
+      when 0xA # BOR
+        set(a, get(a) | get(b))
+
+      when 0xB # AND
+        set(a, get(a) ^ get(b))
+
       when 0xD # IFN
         skip if get(a) == get(b)
 

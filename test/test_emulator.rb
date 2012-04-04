@@ -136,6 +136,33 @@ module RCPU
       assert_equal 0xF, memory[0x1000]
       assert_equal 0xF000, register(:O)
     end
+
+    def test_and
+      block do
+        SET [0x1000], 5
+        AND [0x1000], 4
+      end
+
+      assert_equal (5 & 4), memory[0x1000]
+    end
+
+    def test_bor
+      block do
+        SET [0x1000], 5
+        BOR [0x1000], 4
+      end
+
+      assert_equal (5 | 4), memory[0x1000]
+    end
+
+    def test_xor
+      block do
+        SET [0x1000], 5
+        XOR [0x1000], 4
+      end
+
+      assert_equal (5 ^ 4), memory[0x1000]
+    end
   end
 end
 
