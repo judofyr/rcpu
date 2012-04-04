@@ -43,7 +43,6 @@ module RCPU
 
         SET b, 0x2001
         SET [b], 0x10
-        jump :crash
       end
 
       assert_equal 0x30, memory[0x2000]
@@ -58,7 +57,6 @@ module RCPU
         ADD [0x1001], o         # add O to the high word
         ADD [0x1001], 0xAABB
         ADD [0x1001], o
-        jump :crash
       end
 
       assert_equal 0x2355, memory[0x1000]
@@ -69,7 +67,6 @@ module RCPU
       block  do
         SET [0x1000], 0x5678
         SUB [0x1000], 0xCCDD
-        jump :crash
       end
 
       assert_equal 0x899B, memory[0x1000]
@@ -80,7 +77,6 @@ module RCPU
       block do
         SET [0x1000], 0x5678
         MUL [0x1000], 0x3
-        jump :crash
       end
 
       assert_equal 0x0368, memory[0x1000]
