@@ -23,12 +23,6 @@ RCPU detects when the program runs in a busy loop (jumps to itself) and
 quits the program. Because there's no I/O in DCPU at the moment, it
 dumps the registers, the memory and the stack instead.
 
-## TODO
-
-* The assembler is pretty much done.
-* Many opcodes are missing.
-* No overflow is implemented yet.
-
 ## Program
 
 A program is a piece of executable code (like a function) that consists
