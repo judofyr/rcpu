@@ -125,16 +125,6 @@ module RCPU
     end
   end
 
-  class Jump < Struct.new(:location, :real)
-    def to_machine(mem = [])
-      real.to_machine(mem)
-    end
-
-    def labels
-      [location]
-    end
-  end
-
   class Program
     def initialize(&blk)
       @blocks = []
@@ -173,11 +163,6 @@ module RCPU
       end
     end
 
-    def jump(to)
-      real = BasicInstruction.new(:SET, pc, normalize(to))
-      @ins << Jump.new(to, real)
-    end
-
     def normalize(value)
       case value
       when Register, PlusRegister
@@ -200,15 +185,8 @@ module RCPU
     def to_machine(mem = [])
       labels = {}
 
-      @blocks.each_with_index do |(name, iseq), idx|
+      @blocks.each do |name, iseq|
         labels[name] = mem.size
-
-        next_block = @blocks[idx + 1]
-        last = iseq.last
-
-        if next_block && last.is_a?(Jump) && last.location == next_block[0]
-          iseq.pop
-        end
 
         iseq.each do |ins|
           ins.to_machine(mem)

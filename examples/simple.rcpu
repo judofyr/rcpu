@@ -3,10 +3,9 @@ program :main do
     SET a, 2
     SET b, 2
     ADD a, b
-    jump :crash
   end
 
   block :crash do
-    jump :crash
+    SET pc, :crash
   end
 end

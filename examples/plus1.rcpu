@@ -3,12 +3,10 @@ program :main do
     JSR :_plus1
     JSR :_plus1
     JSR :_plus1
-
-    jump :crash
   end
 
   block :crash do
-    jump :crash
+    SET pc, :crash
   end
 end
 

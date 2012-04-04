@@ -11,11 +11,10 @@ program :main do
     SET a, 2
     SET b, 2
     ADD a, b
-    jump :crash
   end
-  
+
   block :crash do
-    jump :crash
+    SET pc, :crash
   end
 end
 ```
@@ -38,9 +37,6 @@ of internal code blocks.
 ### Code blocks and labels
 
 Each code block has a label which you can refer to in any expression.
-`jump label` does the same as `SET pc, label`, but is slightly optimized
-when you jump to the code block right below.
-
 Notice how you're *not* restricted to using labels only for jumping; it
 behaves more like a constant.
 
@@ -51,18 +47,15 @@ program :main do
     SET i, 1
     # Change the constant in the block below.
     SET [i + :example], 0x2000
-    # Jump to the code.
-    jump :example
   end
 
   block :example do
     # Even though we set A to 0x1000, the code above sets it to 0x2000.
     SET a, 0x1000
-    jump :crash
   end
 
   block :crash do
-    jump :crash
+    SET pc, :crash
   end
 end
 ```
@@ -86,13 +79,13 @@ program :main do
     SET a, [:word]
     SET b, [:bytestring]
     SET c, [:string]
-    jump :crash
   end
 
   block :crash do
-    jump :crash
+    SET pc, :crash
   end
 end
+
 ```
 
 ### Programs and external labels
@@ -101,17 +94,16 @@ External labels starts with an underscore and refers to the first code
 block to another program:
 
 ```ruby
+# examples/plus1.rcpu
 program :main do
   block :init do
     JSR :_plus1
     JSR :_plus1
     JSR :_plus1
-
-    jump :crash
   end
 
   block :crash do
-    jump :crash
+    SET pc, :crash
   end
 end
 
@@ -121,6 +113,7 @@ program :plus1 do
     SET pc, pop
   end
 end
+
 ```
 
 

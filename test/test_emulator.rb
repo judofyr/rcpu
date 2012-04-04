@@ -26,11 +26,10 @@ module RCPU
         program :main do
           block :init do
             instance_eval(&blk)
-            jump :crash
           end
 
           block :crash do
-            jump :crash
+            SET pc, :crash
           end
         end
       end

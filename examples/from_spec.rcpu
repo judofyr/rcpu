@@ -7,29 +7,25 @@ program :main do
     SET [:test], 0x20
     SUB a, [:test]
     IFN a, 0x10
-      jump :crash
-    jump :start_loop
+      SET pc, :crash
   end
 
   block :start_loop do
     SET i, 10
     SET a, :loopdata
-    jump :loop
   end
 
   block :loop do
     SET [i + :loopdata], [a]
     SUB i, 1
     IFN i, 0
-      jump :loop
-
-    jump :callsub
+      SET pc, :loop
   end
 
   block :callsub do
     SET x, 0x4
     JSR :testsub
-    jump :crash
+    SET pc, :crash
   end
 
   block :testsub do
@@ -38,7 +34,7 @@ program :main do
   end
 
   block :crash do
-    jump :crash
+    SET pc, :crash
   end
 end
 
