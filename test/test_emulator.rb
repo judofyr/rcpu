@@ -214,6 +214,25 @@ module RCPU
 
       assert_equal 0, register(:B)
     end
+
+    def test_stack
+      block do
+        SET a, sp
+        SET push, 2
+        SET push, 3
+        SET b, pop
+        SET c, pop
+        SET x, sp
+      end
+
+      # Default SP
+      assert_equal 0, register(:A)
+      # Push and pop
+      assert_equal 3, register(:B)
+      assert_equal 2, register(:C)
+      # Final value of SP
+      assert_equal 0, register(:X)
+    end
   end
 end
 
