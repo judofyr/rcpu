@@ -75,6 +75,17 @@ module RCPU
       assert_equal 0x899B, memory[0x1000]
       assert_equal 0xFFFF, register(:O)
     end
+
+    def test_mul
+      block do
+        SET [0x1000], 0x5678
+        MUL [0x1000], 0x3
+        jump :crash
+      end
+
+      assert_equal 0x0368, memory[0x1000]
+      assert_equal 0x1, register(:O)
+    end
   end
 end
 

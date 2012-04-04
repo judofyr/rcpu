@@ -110,6 +110,10 @@ module RCPU
         res = get(a) - get(b)
         @registers[:O] = res < 0 ? 0xFFFF : 0
         set(a, res & 0xFFFF)
+      when 0x4 # MUL
+        va, vb = get(a), get(b)
+        @registers[:O] = ((va*vb)>>16)&0xffff
+        set(a, (va * vb) & 0xFFFF)
       when 0x7 # SHL
         set(a, get(a) << get(b))
       when 0xD # IFN
