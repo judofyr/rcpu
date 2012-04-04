@@ -162,6 +162,58 @@ module RCPU
 
       assert_equal (5 ^ 4), memory[0x1000]
     end
+
+    def test_ife
+      block do
+        SET a, 5
+        IFE a, 4
+          SET b, 1
+        IFE a, 5
+          SET pc, :crash
+        SET b, 1
+      end
+
+      assert_equal 0, register(:B)
+    end
+
+    def test_ifn
+      block do
+        SET a, 5
+        IFN a, 5
+          SET b, 1
+        IFN a, 4
+          SET pc, :crash
+        SET b, 1
+      end
+
+      assert_equal 0, register(:B)
+    end
+
+    def test_ifg
+      block do
+        SET a, 5
+        IFG a, 6
+          SET b, 1
+        IFG a, 3
+          SET pc, :crash
+        SET b, 1
+      end
+
+      assert_equal 0, register(:B)
+    end
+
+    def test_ifb
+      block do
+        SET a, 5
+        IFB a, 2
+          SET b, 1
+        IFB a, 1
+          SET pc, :crash
+        SET b, 1
+      end
+
+      assert_equal 0, register(:B)
+    end
   end
 end
 

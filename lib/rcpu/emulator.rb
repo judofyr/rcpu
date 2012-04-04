@@ -155,8 +155,17 @@ module RCPU
       when 0xB # AND
         set(a, get(a) ^ get(b))
 
+      when 0xC # IFE
+        skip unless get(a) == get(b)
+
       when 0xD # IFN
-        skip if get(a) == get(b)
+        skip unless get(a) != get(b)
+
+      when 0xE # IFG
+        skip unless get(a) > get(b)
+
+      when 0xF # IFB
+        skip unless (get(a) & get(b)) != 0
 
       else
         raise "Missing basic: 0x#{op.to_s(16)}"
