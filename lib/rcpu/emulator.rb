@@ -138,7 +138,14 @@ module RCPU
         end
 
       when 0x7 # SHL
-        set(a, get(a) << get(b))
+        va, vb = get(a), get(b)
+        @registers[:O] = ((va<<vb)>>16)&0xffff
+        set(a, (va << vb) & 0xFFFF)
+
+      when 0x8 # SHR
+        va, vb = get(a), get(b)
+        @registers[:O] = ((va<<16)>>vb)&0xffff
+        set(a, (va >> vb) & 0xFFFF)
 
       when 0xD # IFN
         skip if get(a) == get(b)

@@ -116,6 +116,26 @@ module RCPU
 
       assert_equal 0, memory[0x1000]
     end
+
+    def test_shl
+      block do
+        SET [0x1000], 0xFFFF
+        SHL [0x1000], 4
+      end
+
+      assert_equal 0xFFF0, memory[0x1000]
+      assert_equal 0xF, register(:O)
+    end
+
+    def test_shr
+      block do
+        SET [0x1000], 0xFF
+        SHR [0x1000], 4
+      end
+
+      assert_equal 0xF, memory[0x1000]
+      assert_equal 0xF000, register(:O)
+    end
   end
 end
 
