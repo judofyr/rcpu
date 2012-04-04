@@ -1,0 +1,44 @@
+program :main do
+  data :test, 1
+  data :loopdata, 10
+
+  block :init do
+    SET a, 0x30
+    SET [:test], 0x20
+    SUB a, [:test]
+    IFN a, 0x10
+      jump :crash
+    jump :start_loop
+  end
+
+  block :start_loop do
+    SET i, 10
+    SET a, :loopdata
+    jump :loop
+  end
+
+  block :loop do
+    SET [i + :loopdata], [a]
+    SUB i, 1
+    IFN i, 0
+      jump :loop
+
+    jump :callsub
+  end
+
+  block :callsub do
+    SET x, 0x4
+    JSR :testsub
+    jump :crash
+  end
+
+  block :testsub do
+    SHL x, 4
+    SET pc, pop
+  end
+
+  block :crash do
+    jump :crash
+  end
+end
+

@@ -1,0 +1,19 @@
+program :main do
+  block :init do
+    SET i, 1
+    # Change the constant in the block below.
+    SET [i + :example], 0x2000
+    # Jump to the code
+    jump :example
+  end
+
+  block :example do
+    # Even though we set A to 0x1000, the code above sets it to 0x2000.
+    SET a, 0x1000
+    jump :crash
+  end
+
+  block :crash do
+    jump :crash
+  end
+end

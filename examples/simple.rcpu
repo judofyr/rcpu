@@ -1,0 +1,12 @@
+program :main do
+  block :init do
+    SET a, 2
+    SET b, 2
+    ADD a, b
+    jump :crash
+  end
+
+  block :crash do
+    jump :crash
+  end
+end

@@ -1,0 +1,21 @@
+program :main do
+  block :init do
+    JSR :_plus1
+    JSR :_plus1
+    JSR :_plus1
+
+    jump :crash
+  end
+
+  block :crash do
+    jump :crash
+  end
+end
+
+program :plus1 do
+  block :init do
+    ADD a, 1
+    SET pc, pop
+  end
+end
+

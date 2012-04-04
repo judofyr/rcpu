@@ -1,0 +1,27 @@
+#!/usr/bin/env ruby
+$LOAD_PATH.unshift(File.expand_path("../../lib", __FILE__))
+
+if ARGV.empty?
+  puts "usage: rcpu examples/from_spec.rpcu"
+  exit 1
+end
+
+require 'rcpu'
+require 'rcpu/emulator'
+
+linker = RCPU::Linker.new
+linker.instance_eval(File.read(ARGV[0]))
+emu = RCPU::Emulator.new(linker.finalize)
+
+puts "Before:"
+emu.dump
+puts
+
+puts "Running..."
+
+emu.run
+
+puts
+puts "After:"
+emu.dump
+
