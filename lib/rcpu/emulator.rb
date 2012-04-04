@@ -31,7 +31,6 @@ module RCPU
       @size = program.size
       @memory = BoundedArray.new(program)
       @registers = Hash.new(0)
-      @registers[:SP] = 0xFFFF
     end
 
     def hex(i)
@@ -46,12 +45,14 @@ module RCPU
       @registers.each do |name, value|
         puts "  %3s:  0x%s" % [name, hex(value)]
       end
-      puts "Stack:  " +
-        (@registers[:SP] == 0xFFFF ? '(null)' : "0x#{hex(@memory[0xFFFF])}") + 
-        "  <- bottom"
+      if @registers[:SP].zero?
+        puts "Stack:  (null)  <- bottom"
+      else
+        puts "Stack:  0x#{hex(@memory[0xFFFF])}  <- bottom"
 
-      0xFFFE.downto(@registers[:SP] + 1) do |x|
-        puts "        0x#{hex(@memory[x])}"
+        0xFFFE.downto(@registers[:SP]) do |x|
+          puts "        0x#{hex(@memory[x])}"
+        end
       end
     end
 
@@ -176,8 +177,8 @@ module RCPU
       case op
       when 0x01 # JSR
         # Store the next PC on stack
+        @registers[:SP] = (@registers[:SP] - 1) & 0xFFFF
         @memory[@registers[:SP]] = @registers[:PC]
-        @registers[:SP] -= 1
         # Set PC to a
         @registers[:PC] = get(a)
       else
@@ -219,9 +220,15 @@ module RCPU
         reg = Register::REAL[v - 0x10]
         @memory[next_word] + @registers[reg]
       when 0x18 # POP
-        @registers[:SP] += 1
+        @registers[:SP].tap do |x|
+          @registers[:SP] = (x + 1) & 0xFFFF
+        end
       when 0x19 # PEEK
-        @registers[:SP] + 1
+        @registers[:SP]
+      when 0x1A
+        @registers[:SP] = (@registers[:SP] - 1) & 0xFFFF
+      when 0x1B
+        :SP
       when 0x1C
         :PC
       when 0x1D
