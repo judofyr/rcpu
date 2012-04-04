@@ -114,6 +114,16 @@ module RCPU
         va, vb = get(a), get(b)
         @registers[:O] = ((va*vb)>>16)&0xffff
         set(a, (va * vb) & 0xFFFF)
+      when 0x5 # DIV
+        va, vb = get(a), get(b)
+        res = 0
+        if vb.zero?
+          @registers[:O] = 0
+        else
+          res = va / vb
+          @registers[:O] = ((va<<16)/vb)&0xffff
+        end
+        set(a, res)
       when 0x7 # SHL
         set(a, get(a) << get(b))
       when 0xD # IFN
