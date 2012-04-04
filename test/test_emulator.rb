@@ -100,6 +100,22 @@ module RCPU
       assert_equal 0, memory[0x1000]
       assert_equal 0, register(:O)
     end
+
+    def test_mod
+      block do
+        SET [0x1000], 15
+        MOD [0x1000], 4
+      end
+
+      assert_equal 3, memory[0x1000]
+
+      block do
+        SET [0x1000], 15
+        MOD [0x1000], 0
+      end
+
+      assert_equal 0, memory[0x1000]
+    end
   end
 end
 

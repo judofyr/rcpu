@@ -129,6 +129,14 @@ module RCPU
         end
         set(a, res)
 
+      when 0x6 # MOD
+        va, vb = get(a), get(b)
+        if vb.zero?
+          set(a, 0)
+        else
+          set(a, (va % vb) & 0xFFFF)
+        end
+
       when 0x7 # SHL
         set(a, get(a) << get(b))
 
