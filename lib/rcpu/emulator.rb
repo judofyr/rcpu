@@ -103,9 +103,13 @@ module RCPU
       when 0x1 # SET
         set(a, get(b))
       when 0x2 # ADD
-        set(a, get(a) + get(b))
+        res = get(a) + get(b)
+        @registers[:O] = res > 0xFFFF ? 1 : 0
+        set(a, res & 0xFFFF)
       when 0x3 # SUB
-        set(a, get(a) - get(b))
+        res = get(a) - get(b)
+        @registers[:O] = res < 0 ? 0xFFFF : 0
+        set(a, res & 0xFFFF)
       when 0x7 # SHL
         set(a, get(a) << get(b))
       when 0xD # IFN
@@ -167,6 +171,8 @@ module RCPU
         @registers[:SP] + 1
       when 0x1C
         :PC
+      when 0x1D
+        :O
       when 0x1E
         @memory[next_word]
       when 0x1F

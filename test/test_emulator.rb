@@ -17,9 +17,13 @@ module RCPU
       @emu.memory
     end
 
+    def register(name)
+      @emu.registers[name]
+    end
+
     def test_set
       rcpu do
-        program :_main do
+        program :main do
           block :init do
             SET a, 0x30
             SET [0x2000], a
@@ -37,6 +41,48 @@ module RCPU
 
       assert_equal 0x30, memory[0x2000]
       assert_equal 0x10, memory[0x2001]
+    end
+
+    def test_add
+      rcpu do
+        program :main do
+          block :init do
+            SET [0x1000], 0x5678    # low word
+            SET [0x1001], 0x1234    # high word
+            ADD [0x1000], 0xCCDD    # add low words, sets O to either 0 or 1 (in this case 1)
+            ADD [0x1001], o         # add O to the high word
+            ADD [0x1001], 0xAABB
+            ADD [0x1001], o
+            jump :crash
+          end
+
+          block :crash do
+            jump :crash
+          end
+        end
+      end
+
+      assert_equal 0x2355, memory[0x1000]
+      assert_equal 0xBCF0, memory[0x1001]
+    end
+
+    def test_sub
+      rcpu do
+        program :main do
+          block :init do
+            SET [0x1000], 0x5678
+            SUB [0x1000], 0xCCDD
+            jump :crash
+          end
+
+          block :crash do
+            jump :crash
+          end
+        end
+      end
+
+      assert_equal 0x899B, memory[0x1000]
+      assert_equal 0xFFFF, register(:O)
     end
   end
 end
