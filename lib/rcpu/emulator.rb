@@ -102,18 +102,22 @@ module RCPU
       case op
       when 0x1 # SET
         set(a, get(b))
+
       when 0x2 # ADD
         res = get(a) + get(b)
         @registers[:O] = res > 0xFFFF ? 1 : 0
         set(a, res & 0xFFFF)
+
       when 0x3 # SUB
         res = get(a) - get(b)
         @registers[:O] = res < 0 ? 0xFFFF : 0
         set(a, res & 0xFFFF)
+
       when 0x4 # MUL
         va, vb = get(a), get(b)
         @registers[:O] = ((va*vb)>>16)&0xffff
         set(a, (va * vb) & 0xFFFF)
+
       when 0x5 # DIV
         va, vb = get(a), get(b)
         res = 0
@@ -124,10 +128,13 @@ module RCPU
           @registers[:O] = ((va<<16)/vb)&0xffff
         end
         set(a, res)
+
       when 0x7 # SHL
         set(a, get(a) << get(b))
+
       when 0xD # IFN
         skip if get(a) == get(b)
+
       else
         raise "Missing basic: 0x#{op.to_s(16)}"
       end
