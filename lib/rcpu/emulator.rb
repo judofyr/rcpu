@@ -68,7 +68,6 @@ module RCPU
       if (op = ins & 0xF).zero?
         op = (ins >> 4) & 0x3F
         a = (ins >> 10) & 0x3F
-        p [a.to_s(2), op.to_s(2)]
         [:non_basic, op, value(a)]
       else
         a = (ins >> 4) & 0x3F

@@ -13,10 +13,6 @@ module RCPU
       mem << an if an
       mem << bn if bn
     end
-
-    def labels
-      [*a.labels, *b.labels]
-    end
   end
 
   class NonBasicInstruction < Struct.new(:name, :a)
@@ -30,10 +26,6 @@ module RCPU
       acode, an = a.code
       mem << ((code << 4) | (acode << 10))
       mem << an if an
-    end
-
-    def labels
-      a.labels
     end
   end
 
@@ -53,10 +45,6 @@ module RCPU
       when *EXTRA
         EXTRA.index(name) + 0x18
       end
-    end
-
-    def labels
-      []
     end
 
     def +(n)
@@ -79,19 +67,11 @@ module RCPU
         raise "Missing: #{location}"
       end
     end
-
-    def labels
-      location.labels
-    end
   end
 
   class PlusRegister < Struct.new(:register, :value)
     def code
       [0x10 + register.code, value]
-    end
-
-    def labels
-      []
     end
   end
 
@@ -103,26 +83,15 @@ module RCPU
         [0x1F, value]
       end
     end
-
-    def labels
-      []
-    end
   end
 
   class Label < Struct.new(:name)
     def code
       [0x1F, name]
     end
-
-    def labels
-      [name]
-    end
   end
 
   class External < Label
-    def labels
-      []
-    end
   end
 
   class Program
