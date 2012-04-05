@@ -58,7 +58,6 @@ module RCPU
       @size = program.size
       @memory = Memory.new(program)
       @registers = Hash.new(0)
-      @next_instruction = send(*dispatch)
     end
 
     def start; @memory.start end
@@ -87,6 +86,10 @@ module RCPU
       end
     end
 
+    def next_instruction
+      @next_instruction ||= [self[:PC], send(*dispatch)]
+    end
+
     def next_word
       @registers[:PC].tap do
         @registers[:PC] += 1
@@ -110,8 +113,8 @@ module RCPU
 
     # Run one instruction
     def tick
-      @next_instruction.execute(self)
-      @next_instruction = send(*dispatch)
+      next_instruction[1].execute(self)
+      @next_instruction = nil
     end
 
     # Skip one instruction

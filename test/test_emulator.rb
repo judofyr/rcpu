@@ -67,7 +67,7 @@ module RCPU
       end
 
       until ins.empty?
-        assert_equal ins.shift, @emu.next_instruction
+        assert_equal ins.shift, @emu.next_instruction[1]
         @emu.tick
       end
     end
@@ -415,7 +415,7 @@ module RCPU
       ]
 
       until res.empty?
-        assert_equal res.shift, @emu.next_instruction.to_s
+        assert_equal res.shift, @emu.next_instruction[1].to_s
         @emu.tick
       end
     end

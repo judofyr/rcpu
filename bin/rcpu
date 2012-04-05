@@ -8,12 +8,22 @@ end
 
 require 'rcpu'
 
+begin
+  require 'pry'
+rescue LoadError
+end
+
+def clean_scope(lib, file)
+  lib.instance_eval(File.read(file), file)
+end
+
 lib = RCPU::Library.new
-lib.instance_eval(File.read(ARGV[0]))
+clean_scope(lib, ARGV[0])
 linker = RCPU::Linker.new
 linker.compile(lib)
 emu = RCPU::Emulator.new(linker.finalize)
 emu.memory.add_extensions(linker.extensions)
+
 
 running = false
 
@@ -23,7 +33,9 @@ end
 
 def help
   puts "(^C) stop execution"
+  puts "(e) evaluate ruby"
   puts "(h) help"
+  puts "(p) ruby shell" if binding.respond_to?(:pry)
   puts "(r) run"
   puts "(s) step"
   puts "(q) quit"
@@ -33,20 +45,29 @@ puts "Welcome to RCPU:"
 help
 
 while true
-  puts "#{emu[:PC].to_s(16).rjust(4, '0')}: #{emu.next_instruction}"
-  print "> "
-  cmd = $stdin.gets
-  exit if cmd.nil?
-  case cmd[0].chomp.downcase
+  pc, ins = emu.next_instruction
+  puts "#{pc.to_s(16).rjust(4, '0')}: #{ins}"
+  print "=> "
+  input = $stdin.gets
+  exit if input.nil?
+  emu.start
+
+  input.chomp!
+  cmd = (input.slice!(0) || '').downcase
+  input.strip!
+
+  case cmd
+  when "e"
+    puts ">> #{emu.instance_eval(input)}"
   when "h"
     help
+  when "p"
+    emu.instance_eval { binding.pry }
   when "r"
     running = true
-    msg = ""
-    emu.start
 
     while true
-      current = emu[:PC]
+      pc, ins = emu.next_instruction
       emu.tick
 
       # Ctrl-C
@@ -54,20 +75,22 @@ while true
         break
       end
 
-      if current == emu[:PC]
-        msg = "Entered infinite loop"
+      if pc == emu[:PC]
         break
       end
     end
 
-    emu.stop
-    puts msg
   when "s", ""
-    emu.tick
+    input = 1 if input.empty?
+    Integer(input).times do
+      emu.tick
+    end
   when "q"
     exit
   else
     puts "Unknown command. Try 'h' for help."
   end
+
+  emu.stop
 end
 

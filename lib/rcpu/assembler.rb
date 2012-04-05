@@ -58,7 +58,7 @@ module RCPU
           Label.new(value)
         end
       else
-        raise "Missing: #{value}"
+        raise "Missing: #{value.inspect}"
       end
     end
 
