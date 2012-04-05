@@ -1,0 +1,19 @@
+library :screen
+
+block :main do
+  SET i, 0                           # Init loop counter, for clarity
+
+  label :nextchar
+  IFE [i+:string], 0                   # If the character is 0 ..
+    SET pc, :end                       # .. jump to the end
+
+  SET [i+0x8000], [i+:string]          # Video ram starts at 0x8000, copy char there
+  ADD i, 1                             # Increase loop counter
+  SET pc, :nextchar                    # Loop
+
+  data :string, "Hello world!\0"       # Zero terminated string
+
+  label :end
+  SUB pc, 1                            # Freeze the CPU forever
+end
+
