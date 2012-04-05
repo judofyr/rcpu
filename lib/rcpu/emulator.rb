@@ -9,26 +9,41 @@ module RCPU
         @array.concat(source)
         # Make sure it's always filled with zeros
         @array.concat(Array.new(SIZE - @array.size, 0))
-        @extensions = Hash.new(@array)
+        @mapping = Hash.new(@array)
+        @extensions = []
       end
 
       def add_extensions(list)
         list.each do |(location, klass, args, blk)|
-          ext = klass.new(@array, *args, &blk)
-          Array(location).each do |loc|
-            @extensions[loc] = ext
+          addr = Array(location)
+          ext = klass.new(@array, addr, *args, &blk)
+          @extensions << ext
+          addr.each do |loc|
+            @mapping[loc] = ext
           end
+        end
+      end
+
+      def start
+        @extensions.each do |ext|
+          ext.start if ext.respond_to?(:start)
+        end
+      end
+
+      def stop
+        @extensions.each do |ext|
+          ext.stop if ext.respond_to?(:stop)
         end
       end
 
       def [](key)
         raise "out of bounds: #{key}" if key >= SIZE
-        @extensions[key][key]
+        @mapping[key][key]
       end
 
       def []=(key, value)
         raise "out of bounds: #{key}" if key >= SIZE
-        @extensions[key][key] = value
+        @mapping[key][key] = value
       end
 
       def slice(*a) @array.slice(*a) end
@@ -45,6 +60,9 @@ module RCPU
       @registers = Hash.new(0)
       @next_instruction = send(*dispatch)
     end
+
+    def start; @memory.start end
+    def stop;  @memory.stop  end
 
     def hex(i)
       i.to_s(16).rjust(4, '0').upcase

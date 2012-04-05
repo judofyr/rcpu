@@ -359,7 +359,7 @@ module RCPU
     end
 
     class VoidExtension
-      def initialize(array)
+      def initialize(array, addr)
         @array = array
       end
 

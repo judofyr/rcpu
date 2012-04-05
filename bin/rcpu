@@ -19,7 +19,6 @@ running = false
 
 trap(:INT) do
   running = false
-  puts
 end
 
 def help
@@ -43,10 +42,26 @@ while true
     help
   when "r"
     running = true
-    begin
+    msg = ""
+    emu.start
+
+    while true
       current = emu[:PC]
       emu.tick
-    end while running && current != emu[:PC]
+
+      # Ctrl-C
+      unless running
+        break
+      end
+
+      if current == emu[:PC]
+        msg = "Entered infinite loop"
+        break
+      end
+    end
+
+    emu.stop
+    puts msg
   when "s", ""
     emu.tick
   when "q"
