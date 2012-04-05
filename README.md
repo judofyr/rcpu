@@ -109,9 +109,12 @@ RCPU ships with some built-in libraries:
 
 ### screen
 
-`screen` maps 0x8000-0x8400 to a 32x16 terminal. 0x8000 is first row,
-first column; 0x8001 is first row, second column; 0x8020 is second row;
-first column.
+`screen` maps 0x8000-0x8400 to a 32x16 terminal:
+
+* 0x8000 is first row, first column
+* 0x8001 is first row, second column
+* ...
+* 0x8020 is second row; first column
 
 ```ruby
 # examples/hello.rcpu
