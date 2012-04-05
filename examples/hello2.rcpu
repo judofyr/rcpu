@@ -1,3 +1,4 @@
+# Taken from: https://bitbucket.org/interfect/dcpu-emu/src/d5d4fd11814f/hello2.asm
 # Notch's second "hello word" program.
 # http://i.imgur.com/XIXc4.jpg
 # Supposed to show formatting.
