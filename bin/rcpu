@@ -28,6 +28,7 @@ end
 
 def help
   puts "(^C) stop execution"
+  puts "(b) add breakpoint"
   puts "(e) evaluate ruby"
   puts "(h) help"
   puts "(p) ruby shell" if binding.respond_to?(:pry)
@@ -38,6 +39,8 @@ end
 
 puts "Welcome to RCPU:"
 help
+
+breakpoints = []
 
 while true
   pc, ins = emu.next_instruction
@@ -51,6 +54,10 @@ while true
   input.strip!
 
   case cmd
+  when "b"
+    bp = Integer(input)
+    breakpoints << bp
+    puts "Added breakpoint #{breakpoints.size} at 0x#{bp.to_s(16)}"
   when "e"
     emu.start
     puts ">> #{emu.instance_eval(input)}"
@@ -63,22 +70,33 @@ while true
     emu.stop
   when "r"
     running = true
+    msg = ""
     emu.start
 
     while true
       pc, ins = emu.next_instruction
+      if idx = breakpoints.index(pc)
+        msg = "Breakpoint #{idx + 1} reached"
+        break
+      end
+
       emu.tick
 
       # Ctrl-C
       unless running
+        msg = "Pausing"
         break
       end
 
+      # Busy loop
       if pc == emu[:PC]
+        msg = "Busy loop"
         break
       end
+
     end
     emu.stop
+    puts msg
 
   when "s", ""
     emu.start
