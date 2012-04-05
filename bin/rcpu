@@ -48,7 +48,6 @@ while true
   print "=> "
   input = $stdin.gets
   exit if input.nil?
-  emu.start
 
   input.chomp!
   cmd = (input.slice!(0) || '').downcase
@@ -56,13 +55,18 @@ while true
 
   case cmd
   when "e"
+    emu.start
     puts ">> #{emu.instance_eval(input)}"
+    emu.stop
   when "h"
     help
   when "p"
+    emu.start
     emu.instance_eval { binding.pry }
+    emu.stop
   when "r"
     running = true
+    emu.start
 
     while true
       pc, ins = emu.next_instruction
@@ -77,18 +81,19 @@ while true
         break
       end
     end
+    emu.stop
 
   when "s", ""
+    emu.start
     input = 1 if input.empty?
     Integer(input).times do
       emu.tick
     end
+    emu.stop
   when "q"
     exit
   else
     puts "Unknown command. Try 'h' for help."
   end
-
-  emu.stop
 end
 
