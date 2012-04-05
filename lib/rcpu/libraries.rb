@@ -54,7 +54,7 @@ module RCPU
     end
   end
 
-  Loader.define :screen do
+  define :screen do
     extension 0x8000, ScreenExtension, :width => 32, :height => 16
   end
 
@@ -109,7 +109,7 @@ module RCPU
     end
   end
 
-  Loader.define :input do
+  define :input do
     block :read do
       label :write
       # We are only allowed to read i characters.

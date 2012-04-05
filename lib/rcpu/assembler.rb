@@ -77,12 +77,16 @@ module RCPU
   end
 
   class Library
-    attr_reader :blocks, :extensions
+    attr_reader :blocks, :extensions, :libraries
     attr_accessor :scope
 
     def initialize
       @blocks = {}
       @extensions = []
+      @libraries = []
+    end
+
+    def all_blocks
     end
 
     def block(name, &blk)
@@ -94,19 +98,22 @@ module RCPU
     end
 
     def library(name)
-      lib = Loader.find(name, @scope)
-      @extensions.concat(lib.extensions)
+      @libraries << name
     end
+  end
 
-    def compile
-      l = Linker.new
-      l.compile(self)
-      l
-    end
+  def self.define(name, &blk)
+    l = Library.new
+    l.instance_eval(&blk)
+    Linker.default_libraries[name] = l
   end
 
   class Linker
     attr_reader :extensions
+
+    def self.default_libraries
+      @dl ||= {}
+    end
 
     def initialize
       @memory = []
@@ -114,16 +121,46 @@ module RCPU
       @seen = {}
       @seen_libs = {}
       @extensions = []
+      @libraries = {}
+    end
+
+    def gather(library)
+      return if @seen_libs[library]
+      @seen_libs[library] = true
+      @blocks.update(library.blocks)
+      @extensions.concat(library.extensions)
+      library.libraries.each do |l|
+        gather(find(l, library.scope))
+      end
+    end
+
+    def find(name, scope)
+      case name
+      when Symbol
+        self.class.default_libraries[name] or
+          raise AssemblerError, "no lib: #{name}"
+      when String
+        full = File.expand_path(name, scope)
+        @libraries[full] || load_file(full)
+      end
+    end
+
+    def load_file(file)
+      l = Library.new
+      l.scope = File.dirname(file)
+      l.instance_eval(File.read(file), file)
+      @libraries[file] = l
     end
 
     def compile(library, name = :main)
+      gather(library)
+      block = @blocks[name] or raise AssemblerError, "no block: #{name}"
+      compile_block(name, block)
+    end
+
+    def compile_block(name, block)
       @seen[name] = @memory.size
-
-      @extensions.concat(library.extensions) unless @seen_libs[library]
-      @seen_libs[library] = true
-
       pending = []
-      block = library.blocks[name] or raise AssemblerError, "no block: #{name}"
       m, labels = block.to_machine
       start = @memory.size
       m.each do |word|
@@ -140,10 +177,10 @@ module RCPU
         end
       end
 
-      pending.each do |ext|
-        lib = Loader.find_block(ext)
-        raise AssemblerError, "no external label: #{ext}" if lib.nil?
-        compile(lib, ext)
+      pending.each do |name|
+        block = @blocks[name]
+        raise AssemblerError, "no external label: #{name}" if block.nil?
+        compile_block(name, block)
       end
     end
 

@@ -13,12 +13,9 @@ begin
 rescue LoadError
 end
 
-def clean_scope(lib, file)
-  lib.instance_eval(File.read(file), file)
-end
-
-lib = RCPU::Loader.find(ARGV[0], Dir.pwd)
-linker = lib.compile
+linker = RCPU::Linker.new
+lib = linker.find(ARGV[0], Dir.pwd)
+linker.compile(lib)
 emu = RCPU::Emulator.new(linker.finalize)
 emu.memory.add_extensions(linker.extensions)
 
