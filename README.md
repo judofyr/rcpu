@@ -158,9 +158,9 @@ Each color follows this structure:
 
 * The first bit in a color describes the brightness (1 = bright/bold; 0
   = normal).
-* The second is red
-* the third is green
-* the fourth is blue
+* The second is red.
+* The third is green.
+* The fourth is blue.
 
 Examples:
 
