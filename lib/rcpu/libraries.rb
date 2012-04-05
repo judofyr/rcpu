@@ -1,10 +1,5 @@
 module RCPU
   class ScreenExtension
-    COLORS = Hash.new("\e[0m").update(
-      0b011100000 => "\033[1;37;40m", # White on black
-      0b111000011 => "\033[1;33;44m"  # Yellow on blue
-    )
-
     def initialize(array, start, options = {})
       @array = array
       @start = start
