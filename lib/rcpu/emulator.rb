@@ -15,11 +15,10 @@ module RCPU
 
       def add_extensions(list)
         list.each do |(location, klass, args, blk)|
-          addr = Array(location)
-          ext = klass.new(@array, addr, *args, &blk)
+          ext = klass.new(@array, location, *args, &blk)
           @extensions << ext
-          addr.each do |loc|
-            @mapping[loc] = ext
+          ext.map do |addr|
+            @mapping[addr] = ext
           end
         end
       end

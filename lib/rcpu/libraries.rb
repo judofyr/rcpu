@@ -5,11 +5,18 @@ module RCPU
       0b111000011 => "\033[1;33;44m"  # Yellow on blue
     )
 
-    def initialize(array, addr, columns)
+    def initialize(array, start, options = {})
       @array = array
-      @addr = addr
-      @start = addr.first
-      @columns = columns
+      @start = start
+      @height = options[:height] || 16
+      @width = options[:width] || 32
+      @length = @height * @width
+    end
+
+    def map
+      @length.times do |x|
+        yield @start + x
+      end
     end
 
     def color_to_ansi(bit)
@@ -17,8 +24,8 @@ module RCPU
     end
 
     def start
-      print "\e7\e[H\e[2J\e8"
-      @addr.each { |a| self[a] = @array[a] }
+      print "\e[H\e[2J\e[17;1H"
+      map { |a| self[a] = @array[a] }
     end
 
     def stop
@@ -32,7 +39,7 @@ module RCPU
     def []=(key, value)
       @array[key] = value
       idx = key - @start
-      rows, cols = idx.divmod(@columns)
+      rows, cols = idx.divmod(@width)
 
       char = (value & 0x7F).chr
       args = []
@@ -48,7 +55,7 @@ module RCPU
   end
 
   Loader.define :screen do
-    extension 0x8000..0x8400, ScreenExtension, 32
+    extension 0x8000, ScreenExtension, :width => 32, :height => 16
   end
 end
 
