@@ -43,72 +43,76 @@ help
 breakpoints = []
 
 while true
-  pc, ins = emu.next_instruction
-  puts "#{pc.to_s(16).rjust(4, '0')}: #{ins}"
-  print "=> "
-  input = $stdin.gets
-  exit if input.nil?
+  begin
+    pc, ins = emu.next_instruction
+    puts "#{pc.to_s(16).rjust(4, '0')}: #{ins}"
+    print "=> "
+    input = $stdin.gets
+    exit if input.nil?
 
-  input.chomp!
-  cmd = (input.slice!(0) || '').downcase
-  input.strip!
+    input.chomp!
+    cmd = (input.slice!(0) || '').downcase
+    input.strip!
 
-  case cmd
-  when "b"
-    bp = Integer(input)
-    breakpoints << bp
-    puts "Added breakpoint #{breakpoints.size} at 0x#{bp.to_s(16)}"
-  when "e"
-    emu.start
-    puts ">> #{emu.instance_eval(input)}"
-    emu.stop
-  when "h"
-    help
-  when "p"
-    emu.start
-    emu.instance_eval { binding.pry }
-    emu.stop
-  when "r"
-    running = true
-    msg = ""
-    emu.start
+    case cmd
+    when "b"
+      bp = Integer(input)
+      breakpoints << bp
+      puts "Added breakpoint #{breakpoints.size} at 0x#{bp.to_s(16)}"
+    when "e"
+      emu.start
+      puts ">> #{emu.instance_eval(input)}"
+      emu.stop
+    when "h"
+      help
+    when "p"
+      emu.start
+      emu.instance_eval { binding.pry }
+      emu.stop
+    when "r"
+      running = true
+      msg = ""
+      emu.start
 
-    while true
-      pc, ins = emu.next_instruction
-      if idx = breakpoints.index(pc)
-        msg = "Breakpoint #{idx + 1} reached"
-        break
+      while true
+        pc, ins = emu.next_instruction
+        if idx = breakpoints.index(pc)
+          msg = "Breakpoint #{idx + 1} reached"
+          break
+        end
+
+        emu.tick
+
+        # Ctrl-C
+        unless running
+          msg = "Pausing"
+          break
+        end
+
+        # Busy loop
+        if pc == emu[:PC]
+          msg = "Busy loop"
+          break
+        end
+
       end
+      emu.stop
+      puts msg
 
-      emu.tick
-
-      # Ctrl-C
-      unless running
-        msg = "Pausing"
-        break
+    when "s", ""
+      emu.start
+      input = 1 if input.empty?
+      Integer(input).times do
+        emu.tick
       end
-
-      # Busy loop
-      if pc == emu[:PC]
-        msg = "Busy loop"
-        break
-      end
-
+      emu.stop
+    when "q"
+      exit
+    else
+      puts "Unknown command. Try 'h' for help."
     end
-    emu.stop
-    puts msg
-
-  when "s", ""
-    emu.start
-    input = 1 if input.empty?
-    Integer(input).times do
-      emu.tick
-    end
-    emu.stop
-  when "q"
-    exit
-  else
-    puts "Unknown command. Try 'h' for help."
+  rescue
+    puts "#{$!.class}: #{$!}"
   end
 end
 
