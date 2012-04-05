@@ -248,5 +248,7 @@ end
 
 require 'rcpu/assembler'
 require 'rcpu/emulator'
+require 'rcpu/loader'
+require 'rcpu/libraries'
 
 

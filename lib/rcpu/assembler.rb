@@ -78,6 +78,7 @@ module RCPU
 
   class Library
     attr_reader :blocks, :extensions
+    attr_accessor :scope
 
     def initialize
       @blocks = {}
@@ -88,14 +89,19 @@ module RCPU
       @blocks[name] = Block.new(&blk)
     end
 
-    def lookup(name)
-      if @blocks.has_key?(name)
-        return self, name
-      end
-    end
-
     def extension(location, klass, *args, &blk)
       @extensions << [location, klass, args, blk]
+    end
+
+    def library(name)
+      lib = Loader.find(name, @scope)
+      @extensions.concat(lib.extensions)
+    end
+
+    def compile
+      l = Linker.new
+      l.compile(self)
+      l
     end
   end
 
@@ -135,9 +141,9 @@ module RCPU
       end
 
       pending.each do |ext|
-        lib, name = library.lookup(ext)
+        lib = Loader.find_block(ext)
         raise AssemblerError, "no external label: #{ext}" if lib.nil?
-        compile(lib, name)
+        compile(lib, ext)
       end
     end
 

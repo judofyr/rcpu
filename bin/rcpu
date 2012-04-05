@@ -17,10 +17,8 @@ def clean_scope(lib, file)
   lib.instance_eval(File.read(file), file)
 end
 
-lib = RCPU::Library.new
-clean_scope(lib, ARGV[0])
-linker = RCPU::Linker.new
-linker.compile(lib)
+lib = RCPU::Loader.find(ARGV[0], Dir.pwd)
+linker = lib.compile
 emu = RCPU::Emulator.new(linker.finalize)
 emu.memory.add_extensions(linker.extensions)
 
