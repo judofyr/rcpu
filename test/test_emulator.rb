@@ -5,14 +5,14 @@ require 'rcpu'
 
 module RCPU
   class TestEmulator < MiniTest::Unit::TestCase
-    def rcpu(&blk)
+    def rcpu(run = true, &blk)
       lib = Library.new
       lib.instance_eval(&blk)
       linker = Linker.new
       linker.compile(lib)
       @emu = Emulator.new(linker.finalize)
       @emu.memory.add_extensions(linker.extensions)
-      @emu.run
+      @emu.run if run
     end
 
     def memory
@@ -31,6 +31,44 @@ module RCPU
           label :crash
           SET pc, :crash
         end
+      end
+    end
+
+    def test_parse
+      ins = []
+      rcpu(false) do
+        block :main do
+          SET a, 1
+          ins << @ins.last
+
+          ADD [a], 0x1000
+          ins << @ins.last
+
+          SUB (a+1), [0x10]
+          ins << @ins.last
+
+          SET push, o
+          ins << @ins.last
+
+          SET x, pop
+          ins << @ins.last
+
+          SET x, peek
+          ins << @ins.last
+
+          SET x, pc
+          ins << @ins.last
+
+          JSR :crash
+
+          label :crash
+          SUB pc, 1
+        end
+      end
+
+      until ins.empty?
+        assert_equal ins.shift, @emu.next_instruction
+        @emu.tick
       end
     end
 

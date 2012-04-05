@@ -45,7 +45,7 @@ module RCPU
       when Register
         value
       when PlusRegister
-        value.value = normalize(value.value)
+        value.value = normalize(value.value) unless value.value.is_a?(Fixnum)
         value
       when Fixnum
         Literal.new(value)
@@ -143,10 +143,13 @@ module RCPU
 
     def finalize
       @memory.map do |word|
-        if word.is_a?(Symbol)
+        case word
+        when Symbol
           @seen[word]
-        else
+        when Fixnum
           word
+        else
+          raise AssemblerError, "unknown word: #{word}"
         end
       end
     end

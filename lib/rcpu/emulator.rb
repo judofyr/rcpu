@@ -34,7 +34,7 @@ module RCPU
       def slice(*a) @array.slice(*a) end
     end
 
-    attr_reader :memory, :registers
+    attr_reader :memory, :registers, :next_instruction
 
     class Immediate < Struct.new(:value)
     end
@@ -43,6 +43,7 @@ module RCPU
       @size = program.size
       @memory = Memory.new(program)
       @registers = Hash.new(0)
+      @next_instruction = send(*dispatch)
     end
 
     def hex(i)
@@ -91,7 +92,8 @@ module RCPU
 
     # Run one instruction
     def tick
-      send(*dispatch)
+      @next_instruction.execute(self)
+      @next_instruction = send(*dispatch)
     end
 
     # Skip one instruction
@@ -101,9 +103,9 @@ module RCPU
 
     def run
       begin
-        current = @registers[:PC]
+        current = self[:PC]
         tick
-      end until current == @registers[:PC]
+      end until current == self[:PC]
     end
 
     def run_forever
@@ -111,146 +113,78 @@ module RCPU
     end
 
     def basic(op, a, b)
-      case op
-      when 0x1 # SET
-        set(a, get(b))
-
-      when 0x2 # ADD
-        res = get(a) + get(b)
-        @registers[:O] = res > 0xFFFF ? 1 : 0
-        set(a, res & 0xFFFF)
-
-      when 0x3 # SUB
-        res = get(a) - get(b)
-        @registers[:O] = res < 0 ? 0xFFFF : 0
-        set(a, res & 0xFFFF)
-
-      when 0x4 # MUL
-        va, vb = get(a), get(b)
-        @registers[:O] = ((va*vb)>>16)&0xffff
-        set(a, (va * vb) & 0xFFFF)
-
-      when 0x5 # DIV
-        va, vb = get(a), get(b)
-        res = 0
-        if vb.zero?
-          @registers[:O] = 0
-        else
-          res = va / vb
-          @registers[:O] = ((va<<16)/vb)&0xffff
-        end
-        set(a, res)
-
-      when 0x6 # MOD
-        va, vb = get(a), get(b)
-        if vb.zero?
-          set(a, 0)
-        else
-          set(a, (va % vb) & 0xFFFF)
-        end
-
-      when 0x7 # SHL
-        va, vb = get(a), get(b)
-        @registers[:O] = ((va<<vb)>>16)&0xffff
-        set(a, (va << vb) & 0xFFFF)
-
-      when 0x8 # SHR
-        va, vb = get(a), get(b)
-        @registers[:O] = ((va<<16)>>vb)&0xffff
-        set(a, (va >> vb) & 0xFFFF)
-
-      when 0x9 # AND
-        set(a, get(a) & get(b))
-
-      when 0xA # BOR
-        set(a, get(a) | get(b))
-
-      when 0xB # AND
-        set(a, get(a) ^ get(b))
-
-      when 0xC # IFE
-        skip unless get(a) == get(b)
-
-      when 0xD # IFN
-        skip unless get(a) != get(b)
-
-      when 0xE # IFG
-        skip unless get(a) > get(b)
-
-      when 0xF # IFB
-        skip unless (get(a) & get(b)) != 0
-
-      else
-        raise "Missing basic: 0x#{op.to_s(16)}"
-      end
+      BasicInstruction.from_code(op, a, b)
     end
 
     def non_basic(op, a)
-      case op
-      when 0x01 # JSR
-        # Store the next PC on stack
-        @registers[:SP] = (@registers[:SP] - 1) & 0xFFFF
-        @memory[@registers[:SP]] = @registers[:PC]
-        # Set PC to a
-        @registers[:PC] = get(a)
+      NonBasicInstruction.from_code(op, a)
+    end
+
+    def [](k)
+      case k
+      when Register
+        self[k.execute(self)]
+      when PlusRegister
+        @memory[@registers[k.register.name] + k.value]
+      when Indirection
+        @memory[self[k.location]]
+      when Literal
+        k.value
+      when Fixnum
+        @memory[k]
+      when Symbol
+        @registers[k]
       else
-        raise "Missing non-basic: 0x#{op.to_s(16)}"
+        raise "Missing get: #{k}"
       end
     end
 
-    def set(k, v)
+    def []=(k, v)
+      v &= 0xFFFF
       case k
+      when Register
+        self[k.execute(self)] = v
+      when PlusRegister
+        @memory[@registers[k.register.name] + k.value] = v
+      when Indirection
+        @memory[self[k.location]] = v
+      when Fixnum
+        @memory[k] = v
       when Symbol
         @registers[k] = v
-      when Immediate
-        raise "Can't set an immediate"
       else
-        @memory[k] = v
+        raise "Missing set: #{k}"
       end
     end
 
-    def get(v)
-      case v
-      when Symbol
-        @registers[v]
-      when Immediate
-        v.value
-      else
-        @memory[v]
-      end
-    end
-
-    # Converts a 6-bit value into something that you can use with #get and #set.
     def value(v)
       case v
       when 0x00..0x07 # register
-        Register::REAL[v]
+        Register.from_code(v)
       when 0x08..0x0f # [register]
-        reg = Register::REAL[v - 0x08]
-        @registers[reg]
+        reg = Register.from_code(v - 0x08)
+        Indirection.new(reg)
       when 0x10..0x17 # [register + next word]
-        reg = Register::REAL[v - 0x10]
-        @memory[next_word] + @registers[reg]
+        reg = Register.from_code(v - 0x10)
+        PlusRegister.new(reg, @memory[next_word])
       when 0x18 # POP
-        @registers[:SP].tap do |x|
-          @registers[:SP] = (x + 1) & 0xFFFF
-        end
+        Register.new(:POP)
       when 0x19 # PEEK
-        @registers[:SP]
+        Register.new(:PEEK)
       when 0x1A
-        @registers[:SP] = (@registers[:SP] - 1) & 0xFFFF
+        Register.new(:PUSH)
       when 0x1B
-        :SP
+        Register.new(:SP)
       when 0x1C
-        :PC
+        Register.new(:PC)
       when 0x1D
-        :O
+        Register.new(:O)
       when 0x1E
-        @memory[next_word]
+        Indirection.new(Literal.new(@memory[next_word]))
       when 0x1F
-        Immediate.new(@memory[next_word])
+        Literal.new(@memory[next_word])
       when 0x20..0x3F
-        Immediate.new(v - 0x20)
+        Literal.new(v - 0x20)
       else
         raise "Missing value: 0x#{v.to_s(16)}"
       end

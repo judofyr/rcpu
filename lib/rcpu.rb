@@ -15,6 +15,81 @@ module RCPU
       mem << an if an
       mem << bn if bn
     end
+
+    def self.from_code(code, a, b)
+      new(ALL[code-1], a, b)
+    end
+
+    def execute(emu)
+      case name
+      when :SET
+        emu[a] = emu[b]
+
+      when :ADD
+        res = emu[a] + emu[b]
+        emu[:O] = res > 0xFFFF ? 1 : 0
+        emu[a] = res
+
+      when :SUB
+        res = emu[a] - emu[b]
+        emu[:O] = res < 0 ? 0xFFFF : 0
+        emu[a] = res
+
+      when :MUL
+        va, vb = emu[a], emu[b]
+        emu[:O] = ((va*vb)>>16)&0xffff
+        emu[a] = va * vb
+
+      when :DIV # DIV
+        va, vb = emu[a], emu[b]
+        res = 0
+        if vb.zero?
+          emu[:O] = 0
+        else
+          res = va / vb
+          emu[:O] = (va << 16) / vb
+        end
+        emu[a] = res
+
+      when :MOD
+        va, vb = emu[a], emu[b]
+        emu[a] = vb.zero? ? 0 : va % vb
+
+      when :SHL
+        va, vb = emu[a], emu[b]
+        emu[:O] = (va << vb) >> 16
+        emu[a] = va << vb
+
+      when :SHR
+        va, vb = emu[a], emu[b]
+        emu[:O] = (va << 16) >> vb
+        emu[a] = va >> vb
+
+      when :AND
+        emu[a] = emu[a] & emu[b]
+
+      when :BOR
+        emu[a] = emu[a] | emu[b]
+
+      when :XOR
+        emu[a] = emu[a] ^ emu[b]
+
+      when :IFE
+        emu.skip unless emu[a] == emu[b]
+
+      when :IFN
+        emu.skip unless emu[a] != emu[b]
+
+      when :IFG
+        emu.skip unless emu[a] > emu[b]
+
+      when :IFB
+        emu.skip unless (emu[a] & emu[b]) != 0
+
+      else
+        raise "Missing basic: #{name}"
+      end
+    end
   end
 
   class NonBasicInstruction < Struct.new(:name, :a)
@@ -28,6 +103,21 @@ module RCPU
       acode, an = a.code
       mem << ((code << 4) | (acode << 10))
       mem << an if an
+    end
+
+    def self.from_code(code, a)
+      new(ALL[code - 1], a)
+    end
+
+    def execute(emu)
+      case name
+      when :JSR
+        emu[:SP] -= 1
+        emu[emu[:SP]] = emu[:PC]
+        emu[:PC] = emu[a]
+      else
+        raise "Missing non-basic: #{name}"
+      end
     end
   end
 
@@ -49,8 +139,25 @@ module RCPU
       end
     end
 
+    def self.from_code(op)
+      new(BASIC[op])
+    end
+
     def +(n)
       PlusRegister.new(self, n)
+    end
+
+    def execute(emu)
+      case name
+      when *REAL
+        name
+      when :POP
+        (emu[:SP] += 1) - 1
+      when :PEEK
+        emu[:SP]
+      when :PUSH
+        emu[:SP] -= 1
+      end
     end
   end
 
