@@ -229,7 +229,14 @@ module RCPU
 
   class ByteData < Struct.new(:bytes)
     def to_machine(mem = [])
-      mem.concat(bytes.to_a)
+      bytes.to_a.each do |byte|
+        case byte
+        when Fixnum
+          mem << byte
+        when String
+          mem.concat(byte.chars.map(&:ord))
+        end
+      end
     end
   end
 

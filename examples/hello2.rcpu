@@ -1,0 +1,45 @@
+# Notch's second "hello word" program.
+# http://i.imgur.com/XIXc4.jpg
+# Supposed to show formatting.
+
+library :screen
+
+block :main do
+  SET i, 0
+  SET j, 0
+  SET b, 0xf100
+
+  label :nextchar
+  SET a, [i+:data]
+  IFE a, 0
+    SET pc, :end
+  IFG a, 0xff
+    SET pc, :setcolor
+  BOR a, b
+  SET [j+0x8000], a
+  ADD i, 1
+  ADD j, 1
+  SET pc, :nextchar
+
+  label :setcolor
+  SET b, a
+  AND b, 0xff
+  SHL b, 8
+  IFG a, 0x1ff
+    ADD b, 0x80 # Add high bit to each character we color. So the character must be 7-bit ASCII
+  ADD i, 1
+  SET pc, :nextchar
+
+  data :data, [0x170, "Hello ", 0x2E1, "world", 0x170, ", how are you?", 0]
+  # Color format:
+  # After processing:
+  # 0x170 -> b = 0x7000 -> 0111 0000 0XXX XXXX = white(grey) on black
+  # 0x2e1 -> b = 0xe180 -> 1110 0001 1XXX XXXX = yellow on blue
+  # b gets OR'd with each character.
+  # ANSI says: black is 0, white is 7, yellow is 3, blue is 4
+  # If black is 0 and grey is 7, it's <FORE> <BACK> <EXTRA BIT> or <FORE> <EXTRA BIT> <BACK>
+
+  label :end
+  SUB pc, 1
+end
+
