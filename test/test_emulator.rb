@@ -359,12 +359,15 @@ module RCPU
     end
 
     class VoidExtension
-      def initialize(array, addr)
+      def initialize(array, start)
         @array = array
+        @start = start
       end
 
+      def map; yield @start end
+
       def [](key)
-        @array[key]
+        0
       end
 
       def []=(key, value)
