@@ -6,60 +6,63 @@ Assembler and emulator for [DCPU](http://0x10c.com/doc/dcpu-16.txt) written in R
 ```ruby
 # Run this with: bin/rcpu examples/simple.rcpu
 
-program :main do
-  block :init do
-    SET a, 2
-    SET b, 2
-    ADD a, b
-  end
+block :main do
+  SET a, 2
+  SET b, 2
+  ADD a, b
 
-  block :crash do
-    SET pc, :crash
-  end
+  label :crash
+  SET pc, :crash
 end
+
 ```
 
 RCPU detects when the program runs in a busy loop (jumps to itself) and
 quits the program. Because there's no I/O in DCPU at the moment, it
 dumps the registers, the memory and the stack instead.
 
-## Program
+## Block
 
-A program is a piece of executable code (like a function) that consists
-of internal code blocks.
+A program is a piece of executable code (like a lightweight function)
+that has internal labels.
 
-### Code blocks and labels
+### Labels
 
 Each code block has a label which you can refer to in any expression.
 Notice how you're *not* restricted to using labels only for jumping; it
-behaves more like a constant.
+behaves more like a constant:
 
 ```ruby
-# examples/simple.rcpu
-program :main do
-  block :init do
-    SET i, 1
-    # Change the constant in the block below.
-    SET [i + :example], 0x2000
-  end
+# examples/modify.rcpu
+block :main do
+  SET i, 1
+  # Change the constant in the block below.
+  SET [i + :example], 0x2000
 
-  block :example do
-    # Even though we set A to 0x1000, the code above sets it to 0x2000.
-    SET a, 0x1000
-  end
-
-  block :crash do
-    SET pc, :crash
-  end
+  label :example
+  # Even though we set A to 0x1000, the code above sets it to 0x2000.
+  SET a, 0x1000
+  
+  label :crash
+  SET pc, :crash
 end
+
 ```
 
 ### Data
 
-Each program has a data section at the end:
+You can use `data` to insert raw data with a label.
 
 ```ruby
-program :main do
+# examples/data.rcpu
+block :main do
+  SET a, [:word]
+  SET b, [:bytestring]
+  SET c, [:string]
+
+  label :crash
+  SET pc, :crash
+
   # 1 word, filled with zeros
   data :word, 1
 
@@ -67,47 +70,31 @@ program :main do
   data :bytestring, [1, 2, 3]
 
   # 6 words, filld with "hello\0"
-  data :string, "hello\0".bytes
-
-  block :init do
-    SET a, [:word]
-    SET b, [:bytestring]
-    SET c, [:string]
-  end
-
-  block :crash do
-    SET pc, :crash
-  end
+  data :string, "hello\0"
 end
 
 ```
 
-### Programs and external labels
+### External labels
 
-External labels starts with an underscore and refers to the first code
-block to another program:
+External labels starts with an underscore and refers to another code
+block:
 
 ```ruby
 # examples/plus1.rcpu
-program :main do
-  block :init do
-    JSR :_plus1
-    JSR :_plus1
-    JSR :_plus1
-  end
+block :main do
+  JSR :_plus1
+  JSR :_plus1
+  JSR :_plus1
 
-  block :crash do
-    SET pc, :crash
-  end
+  label :crash
+  SET pc, :crash
 end
 
-program :plus1 do
-  block :init do
-    ADD a, 1
-    SET pc, pop
-  end
+block :plus1 do
+  ADD a, 1
+  SET pc, pop
 end
-
 ```
 
 

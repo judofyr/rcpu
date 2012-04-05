@@ -1,4 +1,6 @@
 module RCPU
+  class AssemblerError < StandardError; end
+
   class BasicInstruction < Struct.new(:name, :a, :b)
     ALL = %w[SET ADD SUB MUL DIV MOD SHL SHR AND BOR XOR IFE IFN IFG IFB].map(&:to_sym)
 
@@ -62,7 +64,7 @@ module RCPU
       when Register
         location.code + 0x08
       when Label
-        [0x1E, location.name]
+        [0x1E, location]
       else
         raise "Missing: #{location}"
       end
@@ -87,32 +89,49 @@ module RCPU
 
   class Label < Struct.new(:name)
     def code
-      [0x1F, name]
+      [0x1F, self]
     end
   end
 
   class External < Label
   end
 
-  class Program
+  class ByteData < Struct.new(:bytes)
+    def to_machine(mem = [])
+      mem.concat(bytes.to_a)
+    end
+  end
+
+  class ZeroData < Struct.new(:length)
+    def to_machine(mem = [])
+      length.times { mem << 0 }
+    end
+  end
+
+  class StringData < Struct.new(:string)
+    def to_machine(mem = [])
+      mem.concat(string.chars.map(&:ord))
+    end
+  end
+
+  class Block
     def initialize(&blk)
-      @blocks = []
+      @ins = []
       @data = {}
       instance_eval(&blk)
     end
 
-    def __data__
-      @data
-    end
-
-    def block(name)
-      @ins = []
-      yield
-      @blocks << [name, @ins]
-    end
-
-    def data(name, size)
-      @data[name] = size
+    def data(name, data)
+      label(name)
+      if data.respond_to?(:to_ary)
+        @ins << ByteData.new(data)
+      elsif data.respond_to?(:to_int)
+        @ins << ZeroData.new(data)
+      elsif data.respond_to?(:to_str)
+        @ins << StringData.new(data)
+      else
+        raise AssemblerError, "uknown data type"
+      end
     end
 
     Register::ALL.each do |name|
@@ -132,9 +151,16 @@ module RCPU
       end
     end
 
+    def label(name)
+      @ins << name
+    end
+
     def normalize(value)
       case value
-      when Register, PlusRegister
+      when Register
+        value
+      when PlusRegister
+        value.value = normalize(value.value)
         value
       when Fixnum
         Literal.new(value)
@@ -142,7 +168,7 @@ module RCPU
         Indirection.new(normalize(value[0]))
       when Symbol
         if value.to_s[0] == ?_
-          External.new(value)
+          External.new(value.to_s[1..-1].to_sym)
         else
           Label.new(value)
         end
@@ -153,64 +179,75 @@ module RCPU
 
     def to_machine(mem = [])
       labels = {}
-
-      @blocks.each do |name, iseq|
-        labels[name] = mem.size
-
-        iseq.each do |ins|
-          ins.to_machine(mem)
+      @ins.each do |i|
+        case i
+        when Symbol
+          labels[i] = mem.size
+        else
+          i.to_machine(mem)
         end
       end
-
       [mem, labels]
+    end
+  end
+
+  class Library
+    attr_reader :blocks
+
+    def initialize
+      @blocks = {}
+    end
+
+    def block(name, &blk)
+      @blocks[name] = Block.new(&blk)
+    end
+
+    def lookup(name)
+      if @blocks.has_key?(name)
+        return self, name
+      end
     end
   end
 
   class Linker
     def initialize
       @memory = []
-      @programs = {}
+      @blocks = {}
+      @seen = {}
     end
 
-    def program(name, &blk)
-      self[:"_#{name}"] = Program.new(&blk)
-    end
+    def compile(library, name = :main)
+      @seen[name] = @memory.size
 
-    def []=(name, program)
-      @programs[name] = @memory.size
-      m, labels = program.to_machine
-      codestart = @memory.size
-      datastart = m.size
-      data = {}
-
-      program.__data__.each do |key, value|
-        size = value.respond_to?(:to_a) ? value.to_a.size : value
-        data[key] = datastart
-        datastart += size
-      end
-
+      pending = []
+      block = library.blocks[name] or raise AssemblerError, "no block: #{name}"
+      m, labels = block.to_machine
+      start = @memory.size
       m.each do |word|
-        # Resolve internal labels
-        if word.is_a?(Symbol) && (internal = labels[word] || data[word])
-          @memory << internal + codestart
+        case word
+        when External
+          name = word.name
+          pending << name unless @seen[name]
+          @memory << name
+        when Label
+          location = labels[word.name] or raise AssemblerError, "no label: #{word.name}"
+          @memory << location + start
         else
           @memory << word
         end
       end
 
-      program.__data__.each do |key, value|
-        if value.respond_to?(:to_a)
-          @memory.concat(value.to_a)
-        else
-          value.times { @memory << 0 }
-        end
+      pending.each do |ext|
+        lib, name = library.lookup(ext)
+        raise AssemblerError, "no external label: #{ext}" if lib.nil?
+        compile(lib, name)
       end
     end
 
     def finalize
       @memory.map do |word|
         if word.is_a?(Symbol)
-          @programs[word] or raise "Can't resolve #{word}"
+          @seen[word]
         else
           word
         end

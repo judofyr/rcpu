@@ -1,4 +1,11 @@
-program :main do
+block :main do
+  SET a, [:word]
+  SET b, [:bytestring]
+  SET c, [:string]
+
+  label :crash
+  SET pc, :crash
+
   # 1 word, filled with zeros
   data :word, 1
 
@@ -6,16 +13,6 @@ program :main do
   data :bytestring, [1, 2, 3]
 
   # 6 words, filld with "hello\0"
-  data :string, "hello\0".bytes
-
-  block :init do
-    SET a, [:word]
-    SET b, [:bytestring]
-    SET c, [:string]
-  end
-
-  block :crash do
-    SET pc, :crash
-  end
+  data :string, "hello\0"
 end
 

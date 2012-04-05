@@ -9,8 +9,10 @@ end
 require 'rcpu'
 require 'rcpu/emulator'
 
+lib = RCPU::Library.new
+lib.instance_eval(File.read(ARGV[0]))
 linker = RCPU::Linker.new
-linker.instance_eval(File.read(ARGV[0]))
+linker.compile(lib)
 emu = RCPU::Emulator.new(linker.finalize)
 
 puts "Before:"

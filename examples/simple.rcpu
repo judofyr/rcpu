@@ -1,11 +1,9 @@
-program :main do
-  block :init do
-    SET a, 2
-    SET b, 2
-    ADD a, b
-  end
+block :main do
+  SET a, 2
+  SET b, 2
+  ADD a, b
 
-  block :crash do
-    SET pc, :crash
-  end
+  label :crash
+  SET pc, :crash
 end
+
