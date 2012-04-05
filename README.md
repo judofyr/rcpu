@@ -21,14 +21,10 @@ Then you can step through it (or run it).
 
 ## Block
 
-A program is a piece of executable code (like a lightweight function)
+A block is a piece of executable code (like a lightweight function)
 that has internal labels.
 
 ### Labels
-
-Each code block has a label which you can refer to in any expression.
-Notice how you're *not* restricted to using labels only for jumping; it
-behaves more like a constant:
 
 ```ruby
 # examples/modify.rcpu
