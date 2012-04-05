@@ -14,6 +14,7 @@ lib.instance_eval(File.read(ARGV[0]))
 linker = RCPU::Linker.new
 linker.compile(lib)
 emu = RCPU::Emulator.new(linker.finalize)
+emu.memory.add_extensions(linker.extensions)
 
 puts "Before:"
 emu.dump

@@ -1,0 +1,22 @@
+class InputExtension
+  def initialize(array)
+    @array = array
+  end
+
+  def [](key)
+    $stdin.getc.ord
+  end
+
+  def []=(key, value)
+    # do nothing
+  end
+end
+
+extension 0x1000, InputExtension
+
+block :main do
+  SET a, [0x1000]
+  label :crash
+  SET pc, :crash
+end
+

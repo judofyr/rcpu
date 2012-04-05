@@ -192,10 +192,11 @@ module RCPU
   end
 
   class Library
-    attr_reader :blocks
+    attr_reader :blocks, :extensions
 
     def initialize
       @blocks = {}
+      @extensions = []
     end
 
     def block(name, &blk)
@@ -207,17 +208,28 @@ module RCPU
         return self, name
       end
     end
+
+    def extension(location, klass, *args, &blk)
+      @extensions << [location, klass, args, blk]
+    end
   end
 
   class Linker
+    attr_reader :extensions
+
     def initialize
       @memory = []
       @blocks = {}
       @seen = {}
+      @seen_libs = {}
+      @extensions = []
     end
 
     def compile(library, name = :main)
       @seen[name] = @memory.size
+
+      @extensions.concat(library.extensions) unless @seen_libs[library]
+      @seen_libs[library] = true
 
       pending = []
       block = library.blocks[name] or raise AssemblerError, "no block: #{name}"

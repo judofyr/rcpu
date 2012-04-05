@@ -1,25 +1,37 @@
 module RCPU
   class Emulator
     # An Array with bound checking
-    class BoundedArray < Array
+    class Memory
       SIZE = 0x10000
 
       def initialize(source)
-        super()
-        concat(source)
+        @array = []
+        @array.concat(source)
         # Make sure it's always filled with zeros
-        concat(Array.new(SIZE - size, 0))
+        @array.concat(Array.new(SIZE - @array.size, 0))
+        @extensions = Hash.new(@array)
       end
 
-      def [](*keys)
-        raise "out of bounds: #{keys[0]}" if keys.size == 1 && keys[0] >= SIZE
-        super
+      def add_extensions(list)
+        list.each do |(location, klass, args, blk)|
+          ext = klass.new(@array, *args, &blk)
+          Array(location).each do |loc|
+            @extensions[loc] = ext
+          end
+        end
+      end
+
+      def [](key)
+        raise "out of bounds: #{key}" if key >= SIZE
+        @extensions[key][key]
       end
 
       def []=(key, value)
         raise "out of bounds: #{key}" if key >= SIZE
-        super
+        @extensions[key][key] = value
       end
+
+      def slice(*a) @array.slice(*a) end
     end
 
     attr_reader :memory, :registers
@@ -29,7 +41,7 @@ module RCPU
 
     def initialize(program)
       @size = program.size
-      @memory = BoundedArray.new(program)
+      @memory = Memory.new(program)
       @registers = Hash.new(0)
     end
 
@@ -38,7 +50,7 @@ module RCPU
     end
 
     def dump
-      @memory[0, @size].each_slice(8).each_with_index do |r, i|
+      @memory.slice(0, @size).each_slice(8).each_with_index do |r, i|
         print "0x#{hex(i*8)}: "
         puts r.map { |x| hex(x) }.join(" ")
       end

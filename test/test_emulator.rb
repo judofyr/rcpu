@@ -12,6 +12,7 @@ module RCPU
       linker = Linker.new
       linker.compile(lib)
       @emu = Emulator.new(linker.finalize)
+      @emu.memory.add_extensions(linker.extensions)
       @emu.run
     end
 
@@ -318,6 +319,34 @@ module RCPU
           JSR :_another
         end
       end
+    end
+
+    class VoidExtension
+      def initialize(array)
+        @array = array
+      end
+
+      def [](key)
+        @array[key]
+      end
+
+      def []=(key, value)
+        # do nothing
+      end
+    end
+
+    def test_extension
+      rcpu do
+        extension 0x1000, VoidExtension
+
+        block :main do
+          SET [0x1000], 5
+          label :crash
+          SET pc, :crash
+        end
+      end
+
+      assert_equal 0, memory[0x1000]
     end
   end
 end
