@@ -4,6 +4,10 @@ module RCPU
   class BasicInstruction < Struct.new(:name, :a, :b)
     ALL = %w[SET ADD SUB MUL DIV MOD SHL SHR AND BOR XOR IFE IFN IFG IFB].map(&:to_sym)
 
+    def to_s
+      "#{name} #{a}, #{b}"
+    end
+
     def code
       ALL.index(name) + 1
     end
@@ -95,6 +99,10 @@ module RCPU
   class NonBasicInstruction < Struct.new(:name, :a)
     ALL = %w[JSR].map(&:to_sym)
 
+    def to_s
+      "#{name} #{a}"
+    end
+
     def code
       ALL.index(name) + 1
     end
@@ -130,6 +138,10 @@ module RCPU
     EXTRA   = KINDA + SPECIAL
     ALL     = BASIC + EXTRA
 
+    def to_s
+      name.to_s.downcase
+    end
+
     def code
       case name
       when *BASIC
@@ -162,6 +174,10 @@ module RCPU
   end
 
   class Indirection < Struct.new(:location)
+    def to_s
+      "[#{location}]"
+    end
+
     def code
       case location
       when Literal
@@ -179,12 +195,20 @@ module RCPU
   end
 
   class PlusRegister < Struct.new(:register, :value)
+    def to_s
+      "[#{register}+#{value}]"
+    end
+
     def code
       [0x10 + register.code, value]
     end
   end
 
   class Literal < Struct.new(:value)
+    def to_s
+      "0x" + value.to_s(16).upcase
+    end
+
     def code
       if value <= 0x1F
         value + 0x20

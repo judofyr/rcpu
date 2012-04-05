@@ -385,6 +385,40 @@ module RCPU
 
       assert_equal 0, memory[0x1000]
     end
+
+    def test_format
+      rcpu(false) do
+        block :main do
+          SET a, 1
+          ADD [a], 0x1000
+          SUB [a+1], [0x10]
+          SET push, o
+          SET x, pop
+          SET x, peek
+          SET x, pc
+          JSR :crash
+          label :crash
+          SUB pc, 1
+        end
+      end
+
+      res = [
+        "SET a, 0x1",
+        "ADD [a], 0x1000",
+        "SUB [a+1], [0x10]",
+        "SET push, o",
+        "SET x, pop",
+        "SET x, peek",
+        "SET x, pc",
+        "JSR 0xC",
+        "SUB pc, 0x1"
+      ]
+
+      until res.empty?
+        assert_equal res.shift, @emu.next_instruction.to_s
+        @emu.tick
+      end
+    end
   end
 end
 
