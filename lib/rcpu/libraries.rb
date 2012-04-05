@@ -35,11 +35,14 @@ module RCPU
       rows, cols = idx.divmod(@columns)
 
       char = (value & 0x7F).chr
-      fore = color_to_ansi(value >> 12) + 30
-      back = color_to_ansi(value >> 8)  + 40
-      bold = value >> 15
+      args = []
+      args << (value >> 15)
+      if value > 0x7F
+        args << color_to_ansi(value >> 12) + 30
+        args << color_to_ansi(value >> 8)  + 40
+      end
 
-      color = "\e[#{bold};#{fore};#{back}m"
+      color = "\e[#{args*';'}m"
       print "\e7\e[#{rows+1};#{cols+1}H#{color}#{char}\e8"
     end
   end
