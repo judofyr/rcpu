@@ -1,0 +1,43 @@
+class ScreenExtension
+  def initialize(array, start, columns)
+    @array = array
+    @start = start
+    @columns = columns
+    @reset = false
+  end
+
+  def [](key)
+    @array[key]
+  end
+
+  def []=(key, value)
+    if !@reset
+      @reset = true
+      print "\e[H\e[2J"
+    end
+
+    @array[key] = value
+    idx = key - @start
+    rows, cols = idx.divmod(@columns)
+    print "\e[#{rows+1};#{cols+1}H#{value.chr}"
+  end
+end
+
+extension 0x8000..0x8400, ScreenExtension, 0x8000, 32
+
+block :main do
+  SET a, :string
+  SET b, 0x8000
+
+  label :write
+  SET [b], [a]
+  ADD a, 1
+  ADD b, 1
+  IFE [a], 0
+    SUB pc, 1
+  SET pc, :write
+
+  data :string, "**** RCPU-16 ****".center(32) +
+    "Video: WORKING!\0"
+end
+
