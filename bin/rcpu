@@ -7,7 +7,6 @@ if ARGV.empty?
 end
 
 require 'rcpu'
-require 'rcpu/emulator'
 
 lib = RCPU::Library.new
 lib.instance_eval(File.read(ARGV[0]))
@@ -16,15 +15,44 @@ linker.compile(lib)
 emu = RCPU::Emulator.new(linker.finalize)
 emu.memory.add_extensions(linker.extensions)
 
-puts "Before:"
-emu.dump
-puts
+running = false
 
-puts "Running..."
+trap(:INT) do
+  running = false
+  puts
+end
 
-emu.run
+def help
+  puts "(^C) stop execution"
+  puts "(h) help"
+  puts "(r) run"
+  puts "(s) step"
+  puts "(q) quit"
+end
 
-puts
-puts "After:"
-emu.dump
+puts "Welcome to RCPU:"
+help
+
+while true
+  puts "#{emu[:PC].to_s(16).rjust(4, '0')}: #{emu.next_instruction}"
+  print "> "
+  cmd = $stdin.gets
+  exit if cmd.nil?
+  case cmd[0].chomp.downcase
+  when "h"
+    help
+  when "r"
+    running = true
+    begin
+      current = emu[:PC]
+      emu.tick
+    end while running && current != emu[:PC]
+  when "s", ""
+    emu.tick
+  when "q"
+    exit
+  else
+    puts "Unknown command. Try 'h' for help."
+  end
+end
 

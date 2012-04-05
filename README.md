@@ -4,7 +4,7 @@ RCPU
 Assembler and emulator for [DCPU](http://0x10c.com/doc/dcpu-16.txt) written in Ruby:
 
 ```ruby
-# Run this with: bin/rcpu examples/simple.rcpu
+# Open it in the debugger: bin/rcpu examples/simple.rcpu
 
 block :main do
   SET a, 2
@@ -17,9 +17,7 @@ end
 
 ```
 
-RCPU detects when the program runs in a busy loop (jumps to itself) and
-quits the program. Because there's no I/O in DCPU at the moment, it
-dumps the registers, the memory and the stack instead.
+Then you can step through it (or run it).
 
 ## Block
 
