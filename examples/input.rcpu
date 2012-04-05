@@ -1,0 +1,19 @@
+library :screen
+library :input
+extension 0x9000, StringInput, "Hello world! overflow"
+extension 0x9002, StdinInput
+
+block :main do
+  SET a, 12
+  SET b, 0x9000
+  SET c, 0x8000
+  JSR :_read
+
+  SET a, 10
+  SET b, 0x9002
+  SET c, 0x8020
+  JSR :_readline
+
+  SUB pc, 1
+end
+

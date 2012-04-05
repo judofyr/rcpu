@@ -91,6 +91,17 @@ block :plus1 do
 end
 ```
 
+## Extensions
+
+Extensions allows you to control specific parts of the memory:
+
+```ruby
+extension 0x8000, ScreenExtension, :width => 32, :height => 16
+```
+
+`extension` takes a start address, an extension class and some options.
+It's up to the extension to decide how many words it occupies.
+
 ## Libraries
 
 All your programs are also libraries; executables are merely libraries
@@ -115,6 +126,7 @@ RCPU ships with some built-in libraries:
 * 0x8001 is first row, second column
 * ...
 * 0x8020 is second row; first column
+
 
 ```ruby
 # examples/hello.rcpu
@@ -173,7 +185,6 @@ Bright yellow: 1110
 
 See also Notch's example script:
 
-
 ```ruby
 # examples/hello2.rcpu
 # Notch's second "hello word" program.
@@ -221,5 +232,110 @@ block :main do
 end
 ```
 
+### input
+
+The `input` library defines two blocks which reads input: `read` and
+`readline`. Both requires memory-mapped extension (which takes 2 words).
+
+```ruby
+# examples/input.rcpu
+library :screen
+library :input
+extension 0x9000, StringInput, "Hello world! overflow"
+extension 0x9002, StdinInput
+
+block :main do
+  SET a, 12
+  SET b, 0x9000
+  SET c, 0x8000
+  JSR :_read
+
+  SET a, 10
+  SET b, 0x9002
+  SET c, 0x8020
+  JSR :_readline
+
+  SUB pc, 1
+end
+```
+
+The first address mapped by an input extension is the *length* address.
+Reading from this address returns the amount of buffered data that is
+ready to be read. If this address returns 0, the input stream is closed.
+
+The second address is the *data* address. Reading from this address reads
+one character from the input stream.
+
+Most of the time you don't need to worry about this, but rather use the
+blocks that this library provides.
+
+#### read
+
+<table>
+  <tr>
+    <th>A</th><td>Number characters allowed to read</td>
+  </tr>
+  <tr>
+    <th>B</th><td>Input stream location</td>
+  </tr>
+  <tr>
+    <th>C</th><td>Destination buffer</td>
+  </tr>
+</table>
+
+```ruby
+SET a, 10
+SET b, 0x9000
+SET c, 0x8000
+JSR :_read
+```
+
+The code above will fetch characters from the memory-mapped input at
+0x9000 and write them to 0x8000-0x800F until the input stream closes or
+10 (`A`) characters has been read.
+
+The number of characters sucessfully read will be substracted from `A`.
+
+#### readline
+
+<table>
+  <tr>
+    <th>A</th><td>Number characters allowed to read</td>
+  </tr>
+  <tr>
+    <th>B</th><td>Input stream location</td>
+  </tr>
+  <tr>
+    <th>C</th><td>Destination buffer</td>
+  </tr>
+</table>
+
+```ruby
+SET a, 10
+SET b, 0x9000
+SET c, 0x8000
+JSR :_readline
+```
+
+The code above will fetch characters from the memory-mapped input at
+0x9000 and write them to 0x8000-0x800F until it reaches a newline (which
+is then discarded), the stream closes or 10 (`A`) characters has been
+read.
+
+#### StringInput
+
+StringInput maps up a string as input:
+
+```ruby
+extension 0x9000, StringInput, "Hello world! overflow"
+```
+
+#### StdinInput
+
+StringInput maps up STDIN as input:
+
+```ruby
+extension 0x9002, StdinInput
+```
 
 

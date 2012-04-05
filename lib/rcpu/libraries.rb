@@ -57,5 +57,107 @@ module RCPU
   Loader.define :screen do
     extension 0x8000, ScreenExtension, :width => 32, :height => 16
   end
+
+  class InputExtension
+    def initialize(array, start)
+      @array = array
+      @start = start
+    end
+
+    def map
+      yield @start
+      yield @start + 1
+    end
+
+    def []=(key, value)
+      # do nothing
+    end
+  end
+
+  class StringInput < InputExtension
+    def initialize(array, start, string)
+      super(array, start)
+      @string = string
+    end
+
+    def [](key)
+      if key == @start
+        @string.size
+      else
+        @string.slice!(0).ord
+      end
+    end
+  end
+
+  class StdinInput < InputExtension
+    def initialize(array, start)
+      super
+      @buffer = []
+    end
+
+    def [](key)
+      if key == @start
+        @buffer.empty? && $stdin.closed? ? 0 : 1
+      else
+        @buffer.shift || more
+      end
+    end
+
+    def more
+      @buffer = $stdin.gets.chars.map(&:ord)
+      @buffer.shift
+    end
+  end
+
+  Loader.define :input do
+    block :read do
+      label :write
+      # We are only allowed to read i characters.
+      IFE a, 0
+        SET pc, pop
+
+      # There are no characters left in the stream.
+      IFE [b], 0
+        SET pc, pop
+
+      SET [c], [b+1]
+      ADD c, 1
+      SUB a, 1
+
+      # Next char.
+      SET pc, :write
+    end
+
+    block :readline do
+      SET push, j
+
+      label :write
+
+      # We are only allowed to read i characters.
+      IFE a, 0
+        SET pc, :done
+
+      SUB a, 1
+
+      # There are no characters left in the stream.
+      IFE [b], 0
+        SET pc, :done
+
+      SET j, [b+1]
+      IFE j, 10 # newline
+        SET pc, :done
+
+      SET [c], j
+      ADD c, 1
+      SUB a, 1
+
+      # Next char.
+      SET pc, :write
+
+      label :done
+      SET j, pop
+      SET pc, pop
+    end
+  end
 end
 
