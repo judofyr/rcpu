@@ -149,11 +149,18 @@ describes the color:
 FFFF BBBB _CCC CCCC
 ```
 
-The first four bits describes the text color. The second four bits
-describes the background color. The 9th bit is ignored.
+* The first 4 bits describes the text color.
+* The second 4 bits describes the background color.
+* The 9th bit is ignored.
+* The final 7 bits is the character (ASCII).
 
-The first bit in a color describes the brightness (1 = bright/bold; 0 =
-normal). The second is red; the third is green; the fourth is blue.
+Each color follows this structure:
+
+* The first bit in a color describes the brightness (1 = bright/bold; 0
+  = normal).
+* The second is red
+* the third is green
+* the fourth is blue
 
 Examples:
 
