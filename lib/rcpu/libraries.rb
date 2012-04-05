@@ -1,6 +1,5 @@
 module RCPU
   class ScreenExtension
-    # Guessed from: http://i.imgur.com/XIXc4.jpg
     COLORS = Hash.new("\e[0m").update(
       0b011100000 => "\033[1;37;40m", # White on black
       0b111000011 => "\033[1;33;44m"  # Yellow on blue
@@ -11,6 +10,10 @@ module RCPU
       @addr = addr
       @start = addr.first
       @columns = columns
+    end
+
+    def color_to_ansi(bit)
+      ((bit & 1) << 2) | (bit & 2) | ((bit & 4) >> 2)
     end
 
     def start
@@ -28,10 +31,15 @@ module RCPU
 
     def []=(key, value)
       @array[key] = value
-      char = (value & 0x7F).chr
-      color = COLORS[value >> 7]
       idx = key - @start
       rows, cols = idx.divmod(@columns)
+
+      char = (value & 0x7F).chr
+      fore = color_to_ansi(value >> 12) + 30
+      back = color_to_ansi(value >> 8)  + 40
+      bold = value >> 15
+
+      color = "\e[#{bold};#{fore};#{back}m"
       print "\e7\e[#{rows+1};#{cols+1}H#{color}#{char}\e8"
     end
   end

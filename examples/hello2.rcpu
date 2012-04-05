@@ -27,7 +27,7 @@ block :main do
   AND b, 0xff
   SHL b, 8
   IFG a, 0x1ff
-    ADD b, 0x80 # Add high bit to each character we color. So the character must be 7-bit ASCII
+    ADD b, 0x80
   ADD i, 1
   SET pc, :nextchar
 
@@ -36,9 +36,8 @@ block :main do
   # After processing:
   # 0x170 -> b = 0x7000 -> 0111 0000 0XXX XXXX = white(grey) on black
   # 0x2e1 -> b = 0xe180 -> 1110 0001 1XXX XXXX = yellow on blue
-  # b gets OR'd with each character.
-  # ANSI says: black is 0, white is 7, yellow is 3, blue is 4
-  # If black is 0 and grey is 7, it's <FORE> <BACK> <EXTRA BIT> or <FORE> <EXTRA BIT> <BACK>
+  #                        FORE BACK ? CHAR
+  # Each color is: Brbg (where B = bold/brightness)
 
   label :end
   SUB pc, 1
