@@ -7,8 +7,12 @@ module RCPU
       instance_eval(&blk)
     end
 
-    def data(name, data)
-      label(name)
+    def data(*args)
+      data = args.pop
+      if name = args.shift
+        label(name)
+      end
+
       if data.respond_to?(:to_ary)
         @ins << ByteData.new(data)
       elsif data.respond_to?(:to_int)
