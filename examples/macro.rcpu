@@ -2,6 +2,8 @@
 require 'tsort'
 
 module MyMacros
+  ARG_REGS = [:A, :B, :C].map { |name| RCPU::Register.new(name) }
+
   def jmp dest
     SET pc, dest
   end
@@ -17,7 +19,6 @@ module MyMacros
 
   class MoveSorter
     include TSort
-    ARG_REGS = [:A, :B, :C].map { |name| RCPU::Register.new(name) }
     SPILL_REG = RCPU::Register.new(:O)
 
     Move = Struct.new(:src, :dst, :spill)
@@ -86,28 +87,88 @@ module MyMacros
     # Clean up the stack arguments
     ADD sp, stack_args.size if stack_args.size > 0
   end
+
+  def fun_prologue
+    SET push, j
+    SET j, sp
+  end
+
+  def fun_epilogue
+    SET sp, j
+    SET j, pop
+    ret
+  end
+
+  def fun &b
+    fun_prologue
+
+    # Give the block storage locations for each argument it accepts.
+    num_args = b.arity
+    args = (0...num_args).map do |i|
+      if reg = ARG_REGS[i]
+        reg
+      else
+        PlusRegister.new(j, 2+i-ARG_REGS.size)
+      end
+    end
+
+    yield *args
+
+    fun_epilogue
+  end
 end
 
 # Add the first 6 arguments and return the result
 block :add6 do
   extend MyMacros
-  ADD a, b
-  ADD a, c
-  SET b, sp
-  ADD a, [b+1]
-  ADD a, [b+2]
-  ADD a, [b+3]
-  ret
+  fun do |arg1, arg2, arg3, arg4, arg5, arg6|
+    fail unless arg1 == a
+    [arg2, arg3, arg4, arg5, arg6].each { |arg| ADD a, arg }
+  end
+end
+
+# Naive recursive fibonacci function
+block :fib do
+  extend MyMacros
+  fun do |n|
+    IFG 2, n
+      jmp :base
+
+    result1 = i  # saves the result of the first fib call
+    SET push, result1
+
+    SET push, n
+    SUB n, 1
+    call :_fib, n
+    SET result1, a
+    SET n, pop
+    SUB n, 2
+    call :_fib, n
+    ADD a, result1
+
+    SET result1, pop
+    jmp :out
+    
+    label :base
+    fail unless a == n
+    #SET a, n
+
+    label :out
+  end
 end
 
 block :main do
   extend MyMacros
 
-  SET a, 1
-  SET b, 2
-  SET c, 3
-  SET x, 4
-  call :_add6, c, a, b, x, 5, [:six]
+  if false
+    SET a, 1
+    SET b, 2
+    SET c, 3
+    SET x, 4
+    call :_add6, c, a, b, x, 5, [:six]
+  else
+    call :_fib, 5
+  end
 
   infinite_loop
 
