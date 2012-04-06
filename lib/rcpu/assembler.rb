@@ -8,7 +8,9 @@ module RCPU
 
     def data(name, data)
       label(name)
-      if data.respond_to?(:to_ary)
+      if data.kind_of? Symbol
+        @ins << data
+      elsif data.respond_to?(:to_ary)
         @ins << ByteData.new(data)
       elsif data.respond_to?(:to_int)
         @ins << ZeroData.new(data)
