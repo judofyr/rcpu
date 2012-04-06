@@ -422,6 +422,18 @@ module RCPU
         @emu.tick
       end
     end
+
+    def test_data_label
+      block do
+        SUB pc, 1
+        data :sp, [:stack]
+        data :stack, 512
+        data :sp2, [:stack]
+      end
+
+      assert_equal 0x2, memory[0x1]
+      assert_equal 0x2, memory[0x1+512+0x1]
+    end
   end
 end
 

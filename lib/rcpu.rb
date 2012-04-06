@@ -235,6 +235,8 @@ module RCPU
           mem << byte
         when String
           mem.concat(byte.chars.map(&:ord))
+        when Symbol
+          mem << Label.new(byte)
         end
       end
     end
