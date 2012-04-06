@@ -40,6 +40,12 @@ module RCPU
       @ins << name
     end
 
+    def newlabel
+      @newlabel_cur ||= 0
+      @newlabel_cur += 1
+      :"newlabel_#{@newlabel_cur}".tap { |sym| label sym }
+    end
+
     def normalize(value)
       case value
       when Register
