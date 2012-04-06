@@ -1,0 +1,30 @@
+# Naive recursive fibonacci function
+block :fib do
+  fun do |n|
+    IFG 2, n
+      jmp :base
+
+    locals do |first_result, saved_n|
+      SET saved_n, n
+      SUB n, 1
+      call :_fib, n
+      SET first_result, a
+      SET n, saved_n
+      SUB n, 2
+      call :_fib, n
+      ADD a, first_result
+    end
+    jmp :out
+    
+    label :base
+    fail unless a == n
+    #SET a, n
+
+    label :out
+  end
+end
+
+block :main do
+  call :_fib, 6  # result should be 8
+  infinite_loop
+end

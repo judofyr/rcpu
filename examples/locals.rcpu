@@ -1,0 +1,32 @@
+block :test_locals do
+  fun do
+    locals do |t1,t2,t3|
+      SET t1, 1
+      SET t2, 2
+      SET t3, 3
+      locals do |q1,q2|
+        SET q1, 0x10
+        SET q2, 0x11
+        ADD t1, q1
+        ADD t2, q2
+      end
+      SET a, t1
+      ADD a, t2
+      ADD a, t3
+      # result should be 39
+    end
+  end
+end
+
+block :main do
+  SET a, 0x20
+  SET b, 0x21
+  SET c, 0x22
+  SET i, 0x23
+  SET j, 0x24
+  SET x, 0x25
+  SET y, 0x26
+  SET z, 0x27
+  JSR :_test_locals
+  infinite_loop
+end
