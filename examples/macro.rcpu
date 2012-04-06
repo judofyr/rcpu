@@ -25,7 +25,6 @@ module MyMacros
     def initialize args
       fail "too many arguments" if args.size > ARG_REGS.size
       used_arg_regs = ARG_REGS[0...(args.size)]
-      @spill_move = nil
       @moves = args.zip(used_arg_regs).
         map { |arg,reg| Move.new(arg, reg, false) }.
         reject { |move| move.src == move.dst }
