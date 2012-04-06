@@ -29,6 +29,7 @@ end
 def help
   puts "(^C) stop execution"
   puts "(b) add breakpoint"
+  puts "(d) dump state"
   puts "(e) evaluate ruby"
   puts "(h) help"
   puts "(p) ruby shell" if binding.respond_to?(:pry)
@@ -59,6 +60,8 @@ while true
       bp = Integer(input)
       breakpoints << bp
       puts "Added breakpoint #{breakpoints.size} at 0x#{bp.to_s(16)}"
+    when "d"
+      emu.dump
     when "e"
       emu.start
       puts ">> #{emu.instance_eval(input)}"
