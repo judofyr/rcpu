@@ -251,6 +251,12 @@ module RCPU
       mem.concat(string.chars.map(&:ord))
     end
   end
+
+  class LabelAddressData < Struct.new(:name)
+    def to_machine(mem = [])
+      mem << Label.new(name)
+    end
+  end
 end
 
 require 'rcpu/assembler'
