@@ -125,7 +125,8 @@ module StandardMacros
 
     # Allocate stack space
     locals = (0...num_locals).map do |i|
-      PlusRegister.new j, -(@stack_usage+i+1)
+      offset = -(@stack_usage+i+1)
+      PlusRegister.new j, (offset & 0xFFFF)
     end
     @stack_usage += num_locals
     SUB sp, num_locals
