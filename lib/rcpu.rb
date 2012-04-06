@@ -189,7 +189,7 @@ module RCPU
       when Label
         [0x1E, location]
       else
-        raise "Missing: #{location}"
+        raise AssemblerError, "Missing: #{location}"
       end
     end
   end
@@ -237,6 +237,8 @@ module RCPU
           mem.concat(byte.chars.map(&:ord))
         when Symbol
           mem << Label.new(byte)
+        else
+          raise AssemblerError, "unknown data: #{byte.inspect}"
         end
       end
     end

@@ -20,7 +20,7 @@ module RCPU
       elsif data.respond_to?(:to_str)
         @ins << StringData.new(data)
       else
-        raise AssemblerError, "uknown data type"
+        raise AssemblerError, "unknown data type: #{data.inspect}"
       end
     end
 
@@ -70,7 +70,7 @@ module RCPU
           Label.new(value)
         end
       else
-        raise "Missing: #{value.inspect}"
+        raise AssemblerError, "Missing: #{value.inspect}"
       end
     end
 
@@ -154,6 +154,8 @@ module RCPU
       when String
         full = File.expand_path(name, scope)
         @libraries[full] || load_file(full)
+      else
+        raise AssemblerError, "no lib: #{name.inspect}"
       end
     end
 
@@ -174,6 +176,7 @@ module RCPU
       @seen[name] = @memory.size
       pending = []
       m, labels = block.to_machine
+      p labels.map { |k, v| [k, v+@memory.size] }
       start = @memory.size
       m.each do |word|
         case word
@@ -184,8 +187,10 @@ module RCPU
         when Label
           location = labels[word.name] or raise AssemblerError, "no label: #{word.name}"
           @memory << location + start
-        else
+        when Fixnum
           @memory << word
+        else
+          raise AssemblerError, "unknown word: #{word.inspect}"
         end
       end
 
@@ -204,7 +209,7 @@ module RCPU
         when Fixnum
           word
         else
-          raise AssemblerError, "unknown word: #{word}"
+          raise AssemblerError, "unknown word: #{word.inspect}"
         end
       end
     end
