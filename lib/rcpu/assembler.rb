@@ -3,6 +3,7 @@ module RCPU
     def initialize(&blk)
       @ins = []
       @data = {}
+      @next_newlabel = 0
       instance_eval(&blk)
     end
 
@@ -38,6 +39,13 @@ module RCPU
 
     def label(name)
       @ins << name
+    end
+
+    def newlabel
+      :"newlabel_#{@next_newlabel}".tap do |sym|
+        label sym
+        @next_newlabel += 1
+      end
     end
 
     def normalize(value)
