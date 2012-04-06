@@ -145,7 +145,7 @@ module RCPU
       when Register
         self[k.execute(self)]
       when PlusRegister
-        @memory[@registers[k.register.name] + k.value]
+        @memory[(@registers[k.register.name] + k.value) & 0xFFFF]
       when Indirection
         @memory[self[k.location]]
       when Literal
