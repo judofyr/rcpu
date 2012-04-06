@@ -15,7 +15,7 @@ module RCPU
       elsif data.respond_to?(:to_str)
         @ins << StringData.new(data)
       else
-        raise AssemblerError, "uknown data type"
+        raise AssemblerError, "unknown data type"
       end
     end
 
