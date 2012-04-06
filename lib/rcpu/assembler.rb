@@ -9,14 +9,16 @@ module RCPU
 
     def data(name, data)
       label(name)
-      if data.respond_to?(:to_ary)
+      if data.kind_of? Symbol
+        @ins << LabelAddressData.new(data)
+      elsif data.respond_to?(:to_ary)
         @ins << ByteData.new(data)
       elsif data.respond_to?(:to_int)
         @ins << ZeroData.new(data)
       elsif data.respond_to?(:to_str)
         @ins << StringData.new(data)
       else
-        raise AssemblerError, "uknown data type"
+        raise AssemblerError, "unknown data type"
       end
     end
 
@@ -38,7 +40,7 @@ module RCPU
     end
 
     def label(name)
-      @ins << name
+      @ins << name if name
     end
 
     def newlabel
