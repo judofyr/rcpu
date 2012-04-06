@@ -39,7 +39,7 @@ module RCPU
     end
 
     def label(name)
-      @ins << name
+      @ins << name if name
     end
 
     def normalize(value)
