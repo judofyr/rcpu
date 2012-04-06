@@ -483,6 +483,24 @@ module RCPU
       assert_equal 0, memory[0x1005]
       assert_equal 1, memory[0x1006]
     end
+
+    def test_sin_table
+      n = 16
+
+      rcpu(false) do
+        block :main do
+          extend TrigMacros
+          sin_lookup_table n
+        end
+      end
+
+      expected = [32767, 45307, 55937, 63040,
+                  65535, 63040, 55937, 45307,
+                  32767, 20227, 9597, 2494,
+                  0, 2494, 9597, 20227]
+
+      assert_equal expected, memory.slice(0...n)
+    end
   end
 end
 
