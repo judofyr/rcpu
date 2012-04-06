@@ -434,6 +434,55 @@ module RCPU
       assert_equal 0x2, memory[0x1]
       assert_equal 0x2, memory[0x1+512+0x1]
     end
+
+    def test_parse_number
+      rcpu do
+        library :parse
+
+        block :main do
+          SET a, 10
+          SET b, 3
+          SET c, :base10
+          JSR :_parse_number
+          SET [0x1000], x
+          SET [0x1001], o
+
+          SET a, 16
+          SET b, 3
+          SET c, :base16
+          JSR :_parse_number
+          SET [0x1002], x
+          SET [0x1003], o
+
+          SET a, 2
+          SET b, 3
+          SET c, :base2
+          JSR :_parse_number
+          SET [0x1004], x
+          SET [0x1005], o
+
+          SET a, 5
+          SET b, 3
+          SET c, :base16
+          JSR :_parse_number
+          SET [0x1006], o
+
+          SUB pc, 1
+
+          data :base10, "123"
+          data :base16, "11F"
+          data :base2,  "101"
+        end
+      end
+
+      assert_equal 123, memory[0x1000]
+      assert_equal 0, memory[0x1001]
+      assert_equal 0x11F, memory[0x1002]
+      assert_equal 0, memory[0x1003]
+      assert_equal 0b101, memory[0x1004]
+      assert_equal 0, memory[0x1005]
+      assert_equal 1, memory[0x1006]
+    end
   end
 end
 

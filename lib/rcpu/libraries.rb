@@ -154,5 +154,53 @@ module RCPU
       SET pc, pop
     end
   end
+
+  define :parse do
+    block :parse_number do
+      SET x, 0
+      SET push, z
+
+      # Loop through characters
+      label :number_start
+      SET o, 0
+      IFE b, 0
+        SET pc, :number_exit
+      MUL x, a  # x *= base
+      SET z, [c] # next char
+      ADD c, 1
+      SUB b, 1
+
+      # convert 0-9, A-Z to 0-35
+
+      # < '0'
+      IFG "0".ord, z
+        SET pc, :number_fail
+
+      SUB z, "0".ord
+
+      # <= '9'
+      IFG 10, z
+        SET pc, :number_add
+
+      IFG 17, z # < 'A' (17 is 'A'-'0')
+        SET pc, :number_fail
+
+      SUB z, (17-10)
+
+      label :number_add
+      IFG z, a # bigger than base
+        SET pc, :number_fail
+
+      ADD x, z
+      SET pc, :number_start
+
+      label :number_fail
+      SET o, 1
+
+      label :number_exit
+      SET z, pop
+      SET pc, pop
+    end
+  end
 end
 
