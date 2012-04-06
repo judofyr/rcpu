@@ -1,5 +1,9 @@
+require 'rcpu/macros'
+
 module RCPU
   class Block
+    include StandardMacros
+
     def initialize(&blk)
       @ins = []
       @data = {}
