@@ -116,6 +116,25 @@ module MyMacros
 
     fun_epilogue
   end
+
+  # Allocate storage for local variables on the stack.
+  def locals &b
+    @stack_usage ||= 0
+    num_locals = b.arity
+
+    # Allocate stack space
+    locals = (0...num_locals).map do |i|
+      PlusRegister.new j, -(@stack_usage+i+1)
+    end
+    @stack_usage += num_locals
+    SUB sp, num_locals
+
+    yield *locals
+
+    # Deallocate stack space
+    ADD sp, num_locals
+    @stack_usage -= num_locals
+  end
 end
 
 # Add the first 6 arguments and return the result
@@ -134,19 +153,17 @@ block :fib do
     IFG 2, n
       jmp :base
 
-    result1 = i  # saves the result of the first fib call
-    SET push, result1
+    locals do |first_result,saved_n|
+      SET saved_n, n
+      SUB n, 1
+      call :_fib, n
+      SET first_result, a
+      SET n, saved_n
+      SUB n, 2
+      call :_fib, n
+      ADD a, first_result
+    end
 
-    SET push, n
-    SUB n, 1
-    call :_fib, n
-    SET result1, a
-    SET n, pop
-    SUB n, 2
-    call :_fib, n
-    ADD a, result1
-
-    SET result1, pop
     jmp :out
     
     label :base
@@ -154,6 +171,25 @@ block :fib do
     #SET a, n
 
     label :out
+  end
+end
+
+block :test_locals do
+  extend MyMacros
+  fun do
+    locals do |t1,t2,t3|
+      SET t1, 1
+      SET t2, 2
+      SET t3, 3
+      locals do |q1,q2|
+        SET q1, 0x10
+        SET q2, 0x11
+      end
+      SET a, t1
+      ADD a, t2
+      ADD a, t3
+      # result should be 6
+    end
   end
 end
 
@@ -166,8 +202,18 @@ block :main do
     SET c, 3
     SET x, 4
     call :_add6, c, a, b, x, 5, [:six]
-  else
+  elsif false
     call :_fib, 5
+  else
+    SET a, 0x20
+    SET b, 0x21
+    SET c, 0x22
+    SET i, 0x23
+    SET j, 0x24
+    SET x, 0x25
+    SET y, 0x26
+    SET z, 0x27
+    call :_test_locals
   end
 
   infinite_loop
