@@ -260,5 +260,6 @@ end
 require 'rcpu/assembler'
 require 'rcpu/emulator'
 require 'rcpu/libraries'
+require 'rcpu/debugger'
 
 

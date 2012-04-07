@@ -8,11 +8,15 @@ module RCPU
     def rcpu(run = true, &blk)
       lib = Library.new
       lib.instance_eval(&blk)
-      linker = Linker.new
-      linker.compile(lib)
-      @emu = Emulator.new(linker.finalize)
-      @emu.memory.add_extensions(linker.extensions)
+      @linker = Linker.new
+      @linker.compile(lib)
+      @emu = Emulator.new(@linker.finalize)
+      @emu.memory.add_extensions(@linker.extensions)
       @emu.run if run
+    end
+
+    def debug!
+      Debugger.new(@emu, @linker).start
     end
 
     def memory
