@@ -139,4 +139,13 @@ module StandardMacros
   end
 end
 
+module TrigMacros
+  # Generates a sine lookup table.
+  # The table covers one period. The y values range from 0 to 65535.
+  def sin_lookup_table size
+    values = (0...size).map { |i| ((Math.sin(i*2*Math::PI/size)/2 + 0.5) * 65535).to_i }
+    data :bytestring, values
+  end
+end
+
 end
