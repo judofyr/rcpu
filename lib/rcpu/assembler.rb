@@ -180,7 +180,7 @@ module RCPU
       @seen[name] = @memory.size
       pending = []
       m, labels = block.to_machine
-      p labels.map { |k, v| [k, v+@memory.size] }
+      #p labels.map { |k, v| [k, v+@memory.size] }
       start = @memory.size
       m.each do |word|
         case word
