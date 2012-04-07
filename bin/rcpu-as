@@ -49,5 +49,7 @@ case opts.format
 when 'binary'
   output_io.write data.pack('v*')
 when 'hex'
-  output_io.write(data.map { |x| '%04x' % x }.join("\n"))
+  data.each do |x|
+    printf "%04x\n", x
+  end
 end
