@@ -19,12 +19,12 @@ where [options] are:
 EOS
 
   opt :output, "Output filename", :short => 'o', :type => :string
-  opt :format, "Output format (binary|hex)", :short => 'O', :default => 'binary'
+  opt :format, "Output format (#{EXTENSIONS.keys*'|'})", :short => 'O', :default => 'binary'
   opt :help, "Show this message", :short => 'h'
 
   text <<-EOS
 
-If no output filename is given the output will be written to filename.(bin|hex).
+If no output filename is given the output will be written to filename.(#{EXTENSIONS.values*'|'}).
   EOS
 end
 
