@@ -165,7 +165,7 @@ module RCPU
       when Register
         self[k.execute(self)] = v
       when PlusRegister
-        @memory[@registers[k.register.name] + k.value] = v
+        @memory[(@registers[k.register.name] + k.value) & 0xFFFF] = v
       when Indirection
         @memory[self[k.location]] = v
       when Fixnum
