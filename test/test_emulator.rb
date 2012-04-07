@@ -1,39 +1,7 @@
-$LOAD_PATH.unshift(File.expand_path("../../lib", __FILE__))
-
-require 'minitest/autorun'
-require 'rcpu'
+require 'helper'
 
 module RCPU
-  class TestEmulator < MiniTest::Unit::TestCase
-    def rcpu(run = true, &blk)
-      lib = Library.new
-      lib.instance_eval(&blk)
-      linker = Linker.new
-      linker.compile(lib)
-      @emu = Emulator.new(linker.finalize)
-      @emu.memory.add_extensions(linker.extensions)
-      @emu.run if run
-    end
-
-    def memory
-      @emu.memory
-    end
-
-    def register(name)
-      @emu.registers[name]
-    end
-
-    def block(&blk)
-      rcpu do
-        block :main do
-          instance_eval(&blk)
-
-          label :crash
-          SET pc, :crash
-        end
-      end
-    end
-
+  class TestEmulator < TestCase
     def test_parse
       ins = []
       rcpu(false) do
@@ -271,92 +239,6 @@ module RCPU
       assert_equal 0, register(:X)
     end
 
-    def test_bytedata
-      block do
-        SET a, [:hello]
-        SET [:hello], 123
-        SET b, [:hello]
-        SET pc, :crash
-
-        data :hello, [12]
-      end
-
-      assert_equal 12, register(:A)
-      assert_equal 123, register(:B)
-    end
-
-    def test_zerodata
-      block do
-        SET i, 1
-
-        SET a, 1
-        SET a, [:hello]
-
-        SET b, 1
-        SET b, [i+:hello]
-        SET pc, :crash
-
-        data :hello, 2
-      end
-
-      assert_equal 0, register(:A)
-      assert_equal 0, register(:B)
-    end
-
-    def test_stringdata
-      block do
-        SET i, 1
-        SET a, [:hello]
-        SET b, [i+:hello]
-        SET pc, :crash
-
-        data :hello, "ab"
-      end
-
-      assert_equal "a".ord, register(:A)
-      assert_equal "b".ord, register(:B)
-    end
-
-    def test_unknowndata
-      assert_raises(AssemblerError, "unkown data type") do
-        block do
-          data :hello, :nope
-        end
-      end
-    end
-
-    def test_missing_label
-      assert_raises(AssemblerError, "no label: fail") do
-        block do
-          SET pc, :fail
-        end
-      end
-    end
-
-    def test_multiple_blocks
-      rcpu do
-        block :main do
-          JSR :_another
-          label :crash
-          SET pc, :crash
-        end
-
-        block :another do
-          SET a, 1
-          SET pc, pop
-        end
-      end
-
-      assert_equal 1, register(:A)
-    end
-
-    def test_missing_block
-      assert_raises(AssemblerError, "no external label: another") do
-        block do
-          JSR :_another
-        end
-      end
-    end
 
     class VoidExtension
       def initialize(array, start)
@@ -421,18 +303,6 @@ module RCPU
         assert_equal res.shift, @emu.next_instruction[1].to_s
         @emu.tick
       end
-    end
-
-    def test_data_label
-      block do
-        SUB pc, 1
-        data :sp, [:stack]
-        data :stack, 512
-        data :sp2, [:stack]
-      end
-
-      assert_equal 0x2, memory[0x1]
-      assert_equal 0x2, memory[0x1+512+0x1]
     end
 
     def test_parse_number
