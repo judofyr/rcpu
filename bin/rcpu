@@ -38,6 +38,8 @@ def help
   puts "(q) quit"
 end
 
+emu.start
+
 puts "Welcome to RCPU:"
 help
 
@@ -50,6 +52,7 @@ while true
     name &&= " (#{name})"
     puts "#{pc.to_s(16).rjust(4, '0')}#{name}: #{ins}"
     print "=> "
+    emu.stop
     input = $stdin.gets
     exit if input.nil?
 
@@ -67,13 +70,11 @@ while true
     when "e"
       emu.start
       puts ">> #{emu.instance_eval(input)}"
-      emu.stop
     when "h"
       help
     when "p"
       emu.start
       emu.instance_eval { binding.pry }
-      emu.stop
     when "r"
       running = true
       msg = ""
@@ -101,7 +102,6 @@ while true
         end
 
       end
-      emu.stop
       puts msg
 
     when "s", ""
@@ -110,7 +110,6 @@ while true
       Integer(input).times do
         emu.tick
       end
-      emu.stop
     when "q"
       exit
     else

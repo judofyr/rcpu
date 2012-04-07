@@ -6,6 +6,7 @@ module RCPU
       @height = options[:height] || 16
       @width = options[:width] || 32
       @length = @height * @width
+      @first = true
     end
 
     def map
@@ -19,12 +20,14 @@ module RCPU
     end
 
     def start
-      print "\e[H\e[2J\e[17;1H"
-      map { |a| self[a] = @array[a] }
+      if @first
+        print "\e[?1049h\e[17;1H"
+        @first = false
+      end
     end
 
     def stop
-      print "\e[17;1H"
+      map { |a| self[a] = @array[a] }
     end
 
     def [](key)
@@ -43,6 +46,8 @@ module RCPU
         args << color_to_ansi(value >> 12) + 30
         args << color_to_ansi(value >> 8)  + 40
       end
+
+      char = " " if char.ord.zero?
 
       color = "\e[#{args*';'}m"
       print "\e7\e[#{rows+1};#{cols+1}H#{color}#{char}\e8"
