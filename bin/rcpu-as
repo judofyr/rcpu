@@ -1,0 +1,39 @@
+#!/usr/bin/env ruby
+$LOAD_PATH.unshift(File.expand_path("../../lib", __FILE__))
+require 'trollop'
+require 'rcpu'
+
+opts = Trollop.options do
+  banner <<-EOS
+rcpu-as - a DCPU-16 assembler
+
+Usage:
+       rcpu-as [options] [file]
+
+where [options] are:
+EOS
+
+  opt :output, "Output filename", :short => 'o', :type => :string
+  opt :help, "Show this message", :short => 'h'
+
+  text <<-EOS
+
+If no output filename is given the output will be written to filename.bin.
+  EOS
+end
+
+input_filename = ARGV[0]
+
+if opts[:output]
+  output_io = File.open(opts[:output], 'w')
+else
+  filename = File.join(File.dirname(input_filename),
+                       File.basename(input_filename, '.rcpu') + '.bin')
+  output_io = File.open(filename, 'w')
+end
+
+linker = RCPU::Linker.new
+lib = linker.find(input_filename, Dir.pwd)
+linker.compile(lib)
+data = linker.finalize
+output_io.write data.pack('v*')
