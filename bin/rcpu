@@ -46,7 +46,9 @@ breakpoints = []
 while true
   begin
     pc, ins = emu.next_instruction
-    puts "#{pc.to_s(16).rjust(4, '0')}: #{ins}"
+    name = linker.symbols.key(pc)
+    name &&= " (#{name})"
+    puts "#{pc.to_s(16).rjust(4, '0')}#{name}: #{ins}"
     print "=> "
     input = $stdin.gets
     exit if input.nil?
@@ -57,7 +59,7 @@ while true
 
     case cmd
     when "b"
-      bp = Integer(input)
+      bp = linker.symbols[input] || Integer(input)
       breakpoints << bp
       puts "Added breakpoint #{breakpoints.size} at 0x#{bp.to_s(16)}"
     when "d"

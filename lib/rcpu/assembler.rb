@@ -102,9 +102,6 @@ module RCPU
       @libraries = []
     end
 
-    def all_blocks
-    end
-
     def block(name, &blk)
       @blocks[name] = Block.new(&blk)
     end
@@ -125,7 +122,7 @@ module RCPU
   end
 
   class Linker
-    attr_reader :extensions
+    attr_reader :extensions, :symbols
 
     def self.default_libraries
       @dl ||= {}
@@ -138,6 +135,7 @@ module RCPU
       @seen_libs = {}
       @extensions = []
       @libraries = {}
+      @symbols = {}
     end
 
     def gather(library)
@@ -180,8 +178,12 @@ module RCPU
       @seen[name] = @memory.size
       pending = []
       m, labels = block.to_machine
-      p labels.map { |k, v| [k, v+@memory.size] }
       start = @memory.size
+
+      labels.each do |key, value|
+        @symbols["#{name}_#{key}"] = value + start
+      end
+
       m.each do |word|
         case word
         when External
