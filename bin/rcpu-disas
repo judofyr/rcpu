@@ -24,22 +24,30 @@ data = File.read(input_filename).unpack('v*')
 $emu = RCPU::Emulator.new(data)
 
 # TODO refactor emulator to make this easier
+$decoded = {}
 def decode pc
+  return *$decoded[pc] if $decoded.member? pc
   $emu[:PC] = pc
   _, inst = $emu.next_instruction
   new_pc = $emu[:PC]
   $emu.instance_variable_set :@next_instruction, nil
   if inst.name
+    $decoded[pc] = [new_pc, inst]
     return new_pc, inst
   else
     return nil
   end
 end
 
+def mklabel pc
+  sprintf("L%X", pc).to_sym
+end
+
 # Do a BFS through the control flow graph to find reachable code.
 # This will break for jump tables or other indirect branches.
 # TODO add heuristics for indirect branches.
 seen_pcs = Set.new
+branch_targets = Set.new
 queue = [0]
 while not queue.empty?
   pc = queue.shift
@@ -52,13 +60,16 @@ while not queue.empty?
     when :SET, :ADD, :SUB
       if inst.a.is_a? Register and inst.a.name == :PC
         if inst.b.is_a? Literal
-          if inst.name == :SET
-            queue << inst.b.value
+          target = if inst.name == :SET
+            inst.b.value
           elsif inst.name == :ADD
-            queue << (new_pc+inst.b.value)
+            new_pc + inst.b.value
           elsif inst.name == :SUB
-            queue << (new_pc-inst.b.value)
+            new_pc - inst.b.value
           end
+          queue << target
+          branch_targets << target
+          inst.b = Label.new(mklabel(target))
         elsif inst.b.is_a? Register and inst.b.name == :POP
           # Function return, covered by JSR case.
         else
@@ -70,7 +81,10 @@ while not queue.empty?
     when :JSR
       queue << new_pc
       if inst.a.is_a? Literal
-        queue << inst.a.value
+        target = inst.a.value
+        queue << target
+        branch_targets << target
+        inst.a = Label.new(mklabel(target))
       else
         $stderr.puts "unsupported branch: #{inst}"
       end
@@ -87,6 +101,9 @@ end
 pc = 0
 while pc < data.length
   printf "0x%04X: ", pc
+  if branch_targets.member? pc
+    printf "%s: ", mklabel(pc)
+  end
   if seen_pcs.member? pc
     new_pc, inst = decode pc
     print inst
