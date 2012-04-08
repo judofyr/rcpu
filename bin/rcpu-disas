@@ -47,6 +47,7 @@ end
 # This will break for jump tables or other indirect branches.
 # TODO add heuristics for indirect branches.
 seen_pcs = Set.new
+valid_pcs = Set.new
 branch_targets = Set.new
 queue = [0]
 while not queue.empty?
@@ -56,6 +57,7 @@ while not queue.empty?
   new_pc, inst = decode pc
 
   if inst then
+    valid_pcs << pc
     case inst.name
     when :SET, :ADD, :SUB
       if inst.a.is_a? Register and inst.a.name == :PC
@@ -104,7 +106,7 @@ while pc < data.length
   if branch_targets.member? pc
     printf "%s: ", mklabel(pc)
   end
-  if seen_pcs.member? pc
+  if valid_pcs.member? pc
     new_pc, inst = decode pc
     print inst
     pc = new_pc
