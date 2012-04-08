@@ -26,5 +26,5 @@ end
 
 block :main do
   call :_fib, 6  # result should be 8
-  infinite_loop
+  SUB pc, 1
 end

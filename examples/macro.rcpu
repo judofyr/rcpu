@@ -15,7 +15,7 @@ block :main do
   SET c, 3
   SET x, 4
   add6 a, b, c, x, 5, [:six]  # a should be 21
-  infinite_loop
+  SUB pc, 1
 
   data :six, [6]
 end

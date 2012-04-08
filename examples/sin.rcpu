@@ -25,7 +25,7 @@ block :main do
   IFG screen_width, x
     SET pc, :loop
 
-  infinite_loop
+  SUB pc, 1
 
   label :sin_table
   sin_lookup_table screen_width

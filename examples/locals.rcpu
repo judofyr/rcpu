@@ -28,5 +28,5 @@ block :main do
   SET y, 0x26
   SET z, 0x27
   JSR :_test_locals
-  infinite_loop
+  SUB pc, 1
 end
