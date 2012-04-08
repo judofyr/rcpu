@@ -96,16 +96,21 @@ module RCPU
     end
 
     def [](key)
+      @buffer = fetch if @buffer.empty?
+
       if key == @start
-        @buffer.empty? && $stdin.closed? ? 0 : 1
+        @buffer.size
       else
-        @buffer.shift || more
+        @buffer.shift
       end
     end
 
-    def more
-      @buffer = $stdin.gets.chars.map(&:ord)
-      @buffer.shift
+    def fetch
+      if line = $stdin.gets
+        line.chars.map(&:ord)
+      else
+        []
+      end
     end
   end
 
