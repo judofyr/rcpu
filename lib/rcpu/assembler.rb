@@ -200,7 +200,7 @@ module RCPU
         end
       end
 
-      pending.each do |name|
+      pending.uniq.each do |name|
         block = @blocks[name]
         raise AssemblerError, "no external label: #{name}" if block.nil?
         compile_block(name, block)

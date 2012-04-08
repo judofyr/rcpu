@@ -219,6 +219,10 @@ module RCPU
   end
 
   class Label < Struct.new(:name)
+    def to_s
+      name.inspect
+    end
+
     def code
       [0x1F, self]
     end
