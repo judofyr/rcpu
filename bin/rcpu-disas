@@ -48,6 +48,7 @@ end
 # TODO add heuristics for indirect branches.
 seen_pcs = Set.new
 valid_pcs = Set.new
+skippable_pcs = Set.new
 branch_targets = Set.new
 queue = [0]
 while not queue.empty?
@@ -94,6 +95,7 @@ while not queue.empty?
       skip_pc, _ = decode new_pc
       queue << new_pc
       queue << skip_pc
+      skippable_pcs << new_pc
     else
       queue << new_pc
     end
@@ -105,6 +107,9 @@ while pc < data.length
   printf "0x%04X: ", pc
   if branch_targets.member? pc
     printf "%s: ", mklabel(pc)
+  end
+  if skippable_pcs.member? pc
+    print "  "
   end
   if valid_pcs.member? pc
     new_pc, inst = decode pc
