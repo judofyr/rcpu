@@ -5,6 +5,9 @@ module RCPU
       SIZE = 0x10000
 
       def initialize(source)
+        if source.size > SIZE
+          fail "source size (#{source.size}) larger than memory size (#{SIZE})"
+        end
         @array = []
         @array.concat(source)
         # Make sure it's always filled with zeros
@@ -91,7 +94,7 @@ module RCPU
 
     def next_word
       @registers[:PC].tap do
-        @registers[:PC] += 1
+        @registers[:PC] = (@registers[:PC] + 1) & 0xFFFF;
       end
     end
 
