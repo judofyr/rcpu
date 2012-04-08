@@ -1,0 +1,103 @@
+#!/usr/bin/env ruby
+$LOAD_PATH.unshift(File.expand_path("../../lib", __FILE__))
+require 'trollop'
+require 'rcpu'
+require 'set'
+include RCPU
+
+opts = Trollop.options do
+  banner <<-EOS
+rcpu-disas - a DCPU-16 disassembler
+
+Usage:
+       rcpu-disas [options] [file]
+
+where [options] are:
+EOS
+
+  opt :help, "Show this message", :short => 'h'
+end
+
+input_filename = ARGV[0]
+
+data = File.read(input_filename).unpack('v*')
+$emu = RCPU::Emulator.new(data)
+
+# TODO refactor emulator to make this easier
+def decode pc
+  $emu[:PC] = pc
+  _, inst = $emu.next_instruction
+  new_pc = $emu[:PC]
+  $emu.instance_variable_set :@next_instruction, nil
+  if inst.name
+    return new_pc, inst
+  else
+    return nil
+  end
+end
+
+# Do a BFS through the control flow graph to find reachable code.
+# This will break for jump tables or other indirect branches.
+# TODO add heuristics for indirect branches.
+seen_pcs = Set.new
+queue = [0]
+while not queue.empty?
+  pc = queue.shift
+  next if seen_pcs.member? pc
+  seen_pcs << pc
+  new_pc, inst = decode pc
+
+  if inst then
+    case inst.name
+    when :SET, :ADD, :SUB
+      if inst.a.is_a? Register and inst.a.name == :PC
+        if inst.b.is_a? Literal
+          if inst.name == :SET
+            queue << inst.b.value
+          elsif inst.name == :ADD
+            queue << (new_pc+inst.b.value)
+          elsif inst.name == :SUB
+            queue << (new_pc-inst.b.value)
+          end
+        elsif inst.b.is_a? Register and inst.b.name == :POP
+          # Function return, covered by JSR case.
+        else
+          $stderr.puts "unsupported branch: #{inst}"
+        end
+      else
+        queue << new_pc
+      end
+    when :JSR
+      queue << new_pc
+      if inst.a.is_a? Literal
+        queue << inst.a.value
+      else
+        $stderr.puts "unsupported branch: #{inst}"
+      end
+    when :IFE, :IFN, :IFG, :IFB
+      skip_pc, _ = decode new_pc
+      queue << new_pc
+      queue << skip_pc
+    else
+      queue << new_pc
+    end
+  end
+end
+
+pc = 0
+while pc < data.length
+  printf "0x%04X: ", pc
+  if seen_pcs.member? pc
+    new_pc, inst = decode pc
+    print inst
+    pc = new_pc
+  else
+    word = $emu.memory[pc]
+    printf "data 0x%04X", word
+    if word >= 32 and word <= 126
+      printf " '%s'", word.chr
+    end
+    pc = (pc + 1) & 0xFFFF
+  end
+  puts
+end
