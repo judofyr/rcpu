@@ -9,7 +9,7 @@ module RCPU
       lib = Library.new
       lib.instance_eval(&blk)
       @linker = Linker.new
-      @linker.compile(lib)
+      @linker.compile_library(lib)
       @emu = Emulator.new(@linker.finalize)
       @emu.memory.add_extensions(@linker.extensions)
       @emu.run if run
