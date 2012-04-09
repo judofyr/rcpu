@@ -1,30 +1,66 @@
 RCPU
 ====
 
-Assembler and emulator for [DCPU](http://0x10c.com/doc/dcpu-16.txt) written in Ruby:
+Assembler and emulator for [DCPU](http://0x10c.com/doc/dcpu-16.txt) written in Ruby.
+
+```
+$ bin/rcpu examples/hello.bin
+Welcome to RCPU 0.1.0:
+(^C) stop execution
+(b) add breakpoint
+(c) compile to binary
+(d) dump memory and registrers
+(e) evaluate ruby
+(h) help (this message)
+(p) ruby shell
+(r) run
+(s) step
+(q) quit
+
+You probably want to type 'r' for run or 'c' for compile
+
+0000: JSR a
+```
+
+Then you can press "s" (or just Enter) to step through the code and "r"
+to run it.
+
+Or, you can write assembly in a nice Ruby DSL:
 
 ```ruby
-# Open it in the debugger: bin/rcpu examples/simple.rcpu
+# Run this with: bin/rcpu examples/hello.rcpu
+library :screen
 
 block :main do
-  SET a, 2
-  SET b, 2
-  ADD a, b
+  SET i, 0                             # Init loop counter, for clarity
 
-  label :crash
-  SET pc, :crash
+  label :nextchar
+  IFE [i+:string], 0                   # If the character is 0 ..
+    SET pc, :end                       # .. jump to the end
+
+  SET [i+0x8000], [i+:string]          # Video ram starts at 0x8000, copy char there
+  ADD i, 1                             # Increase loop counter
+  SET pc, :nextchar                    # Loop
+
+  data :string, "Hello world!\0"       # Zero terminated string
+
+  label :end
+  SUB pc, 1                            # Freeze the CPU forever
 end
 
 ```
 
-Then you can step through it (or run it).
+Now you can press "c" to compile it to the examples/hello.bin file we
+ran above.
 
-## Block
+## Ruby assembler
+
+### Block
 
 A block is a piece of executable code (like a lightweight function)
 that has internal labels.
 
-### Labels
+#### Labels
 
 ```ruby
 # examples/modify.rcpu
@@ -43,7 +79,7 @@ end
 
 ```
 
-### Data
+#### Data
 
 You can use `data` to insert raw data with a label.
 
@@ -69,7 +105,7 @@ end
 
 ```
 
-### External labels
+#### External labels
 
 External labels starts with an underscore and refers to another code
 block:
@@ -91,7 +127,7 @@ block :plus1 do
 end
 ```
 
-## Extensions
+### Extensions
 
 Extensions allows you to control specific parts of the memory:
 
@@ -102,7 +138,7 @@ extension 0x8000, ScreenExtension, :width => 32, :height => 16
 `extension` takes a start address, an extension class and some options.
 It's up to the extension to decide how many words it occupies.
 
-## Libraries
+### Libraries
 
 All your programs are also libraries; executables are merely libraries
 that includes a `main`-block. By using `library` you can include other
@@ -113,12 +149,12 @@ libraries:
 library :screen
 
 # Use a library called "foo.rcpu" in the same directory
-library "foo"
+library "foo.rcpu"
 ```
 
 RCPU ships with some built-in libraries:
 
-### screen
+#### screen
 
 `screen` maps 0x8000-0x8400 to a 32x16 terminal:
 
@@ -150,7 +186,7 @@ block :main do
 end
 ```
 
-#### Colors
+##### Colors
 
 *Note: This may change in the future to match 0x10c more closely.*
 
@@ -232,7 +268,7 @@ block :main do
 end
 ```
 
-### input
+#### input
 
 The `input` library defines two blocks which reads input: `read` and
 `readline`. Both requires memory-mapped extension (which takes 2 words).
@@ -269,7 +305,7 @@ one character from the input stream.
 Most of the time you don't need to worry about this, but rather use the
 blocks that this library provides.
 
-#### read
+##### read
 
 <table>
   <tr>
@@ -296,7 +332,7 @@ The code above will fetch characters from the memory-mapped input at
 
 The number of characters sucessfully read will be substracted from `A`.
 
-#### readline
+##### readline
 
 <table>
   <tr>
@@ -322,7 +358,7 @@ The code above will fetch characters from the memory-mapped input at
 is then discarded), the stream closes or 10 (`A`) characters has been
 read.
 
-#### StringInput
+##### StringInput
 
 StringInput maps up a string as input:
 
@@ -330,7 +366,7 @@ StringInput maps up a string as input:
 extension 0x9000, StringInput, "Hello world! overflow"
 ```
 
-#### StdinInput
+##### StdinInput
 
 StdinInput maps up STDIN as input:
 
