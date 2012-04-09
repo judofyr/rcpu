@@ -142,8 +142,6 @@ module RCPU
       IFE a, 0
         SET pc, :done
 
-      SUB a, 1
-
       # There are no characters left in the stream.
       IFE [b], 0
         SET pc, :done
