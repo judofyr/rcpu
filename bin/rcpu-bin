@@ -1,0 +1,18 @@
+#!/usr/bin/env ruby
+$LOAD_PATH.unshift(File.expand_path("../../lib", __FILE__))
+
+if ARGV.empty?
+  puts "usage: rcpu-bin file.bin"
+  exit 1
+end
+
+require 'rcpu'
+
+data = File.open(ARGV.shift, 'rb') { |f| f.read }.unpack('v*')
+emu = RCPU::Emulator.new(data)
+emu.memory.add_extensions([[0x8000, RCPU::ScreenExtension, [], nil]])
+emu.start
+emu.run
+emu.stop
+emu.dump
+
