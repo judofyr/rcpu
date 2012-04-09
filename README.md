@@ -36,7 +36,7 @@ block :main do
   label :example
   # Even though we set A to 0x1000, the code above sets it to 0x2000.
   SET a, 0x1000
-  
+
   label :crash
   SET pc, :crash
 end
@@ -332,10 +332,9 @@ extension 0x9000, StringInput, "Hello world! overflow"
 
 #### StdinInput
 
-StringInput maps up STDIN as input:
+StdinInput maps up STDIN as input:
 
 ```ruby
 extension 0x9002, StdinInput
 ```
-
 
