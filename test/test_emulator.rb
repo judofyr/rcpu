@@ -371,6 +371,23 @@ module RCPU
 
       assert_equal expected, memory.slice(0...n)
     end
+
+    # Tests PC wraparound in the middle of an instruction.
+    def test_pc_wrap
+      rcpu do
+        block :main do
+          crash = 0x85c3 # SUB PC, 1
+          set_z = 0x7c51 # SET z, <next word>
+          SET y, crash
+          SET pc, :wrapped_instruction
+          data :pad, Array.new(65531, 0)
+          data :wrapped_instruction, [set_z]
+        end
+      end
+
+      assert_equal 0x85c3, register(:Y)
+      assert_equal 0x7c41, register(:Z)
+    end
   end
 end
 
