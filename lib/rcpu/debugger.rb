@@ -1,3 +1,8 @@
+begin
+  require 'pry'
+rescue LoadError
+end
+
 module RCPU
   class Debugger
     def initialize(emulator, linker = Linker.new)
@@ -14,9 +19,10 @@ module RCPU
     def help
       puts "(^C) stop execution"
       puts "(b) add breakpoint"
-      puts "(d) dump state"
+      puts "(c) compile to binary"
+      puts "(d) dump memory and registrers"
       puts "(e) evaluate ruby"
-      puts "(h) help"
+      puts "(h) help (this message)"
       puts "(p) ruby shell" if pry?
       puts "(r) run"
       puts "(s) step"
@@ -35,8 +41,11 @@ module RCPU
         @running = false
       end
 
-      puts "Welcome to RCPU:"
+      puts "Welcome to RCPU #{VERSION}:"
       help
+      puts
+      puts "You probably want to type 'r' for run or 'c' for compile"
+      puts
 
       while true
         begin
@@ -55,6 +64,13 @@ module RCPU
             bp = @linker.symbols[input] || Integer(input)
             @breakpoints << bp
             puts "Added breakpoint #{@breakpoints.size} at 0x#{bp.to_s(16)}"
+          when "c"
+            print "Enter filename: "
+            filename = gets.strip
+            File.open(filename, 'w') do |f|
+              f << @emulator.memory.to_s
+            end
+            puts ">> Saved as #{filename}"
           when "d"
             @emulator.dump
           when "e"

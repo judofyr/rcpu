@@ -168,7 +168,11 @@ module RCPU
       @libraries[file] = l
     end
 
-    def compile(library, name = :main)
+    def compile_binary(str)
+      @memory.concat(str.unpack('v*'))
+    end
+
+    def compile_library(library, name = :main)
       gather(library)
       block = @blocks[name] or raise AssemblerError, "no block: #{name}"
       compile_block(name, block)
@@ -220,11 +224,10 @@ module RCPU
       end
     end
 
-    def dump
-      finalize.each_slice(8).each_with_index do |r, i|
-        print "#{(i*8).to_s(16).rjust(4, '0')}: "
-        puts r.map { |x| x.to_s(16).rjust(4, '0') }.join(" ")
-      end
+    def debugger
+      emu = Emulator.new(finalize)
+      emu.memory.add_extensions(extensions)
+      Debugger.new(emu, self)
     end
   end
 end

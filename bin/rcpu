@@ -1,23 +1,46 @@
 #!/usr/bin/env ruby
 $LOAD_PATH.unshift(File.expand_path("../../lib", __FILE__))
 
-if ARGV.empty?
-  puts "usage: rcpu examples/from_spec.rpcu"
-  exit 1
+require 'rcpu'
+require 'rcpu/trollop'
+T = RCPU::Trollop
+
+p = T::Parser.new do
+  version "RCPU #{RCPU::VERSION}"
+  banner <<-EOS
+DCPU-16 assembler, emulator, debugger
+
+Usage:
+  bin/rcpu examples/hello.rcpu
+  bin/rcpu examples/hello.bin
+  bin/rcpu -f bin examples/hello
+
+Available options:
+EOS
+  opt :format, "File format (bin or rcpu). Guessed from filename if not present.",
+    :type => String
 end
 
-require 'rcpu'
+formats = %w[bin rcpu]
 
-begin
-  require 'pry'
-rescue LoadError
+opts = nil
+T.with_standard_exception_handling(p) do
+  opts = p.parse(ARGV)
+  raise T::HelpNeeded unless opts[:filename] = ARGV.shift
+  opts[:format] ||= File.extname(opts[:filename]).sub('.','')
+  p.die :format, "can only be 'bin' or 'rcpu'" unless formats.include?(opts[:format])
 end
 
 linker = RCPU::Linker.new
-lib = linker.find(ARGV[0], Dir.pwd)
-linker.compile(lib)
-emu = RCPU::Emulator.new(linker.finalize)
-emu.memory.add_extensions(linker.extensions)
 
-RCPU::Debugger.new(emu, linker).start
+case opts[:format]
+when 'rpcu'
+  lib = linker.find(opts[:filename], Dir.pwd)
+  linker.compile_library(lib)
+when 'bin'
+  linker.extensions << [0x8000, RCPU::ScreenExtension, []]
+  linker.compile_binary(File.binread(opts[:filename]))
+end
+
+linker.debugger.start
 

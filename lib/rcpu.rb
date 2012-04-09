@@ -1,4 +1,6 @@
 module RCPU
+  VERSION = "0.1.0"
+
   class AssemblerError < StandardError; end
 
   class BasicInstruction < Struct.new(:name, :a, :b)

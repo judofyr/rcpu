@@ -16,6 +16,8 @@ module RCPU
         @extensions = []
       end
 
+      def to_s; @array.pack('v*') end
+
       def add_extensions(list)
         list.each do |(location, klass, args, blk)|
           ext = klass.new(@array, location, *args, &blk)
