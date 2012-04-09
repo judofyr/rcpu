@@ -27,24 +27,29 @@ module RCPU
     def execute(emu)
       case name
       when :SET
+        emu.cycle += 1
         emu[a] = emu[b]
 
       when :ADD
+        emu.cycle += 2
         res = emu[a] + emu[b]
         emu[:O] = res > 0xFFFF ? 1 : 0
         emu[a] = res
 
       when :SUB
+        emu.cycle += 2
         res = emu[a] - emu[b]
         emu[:O] = res < 0 ? 0xFFFF : 0
         emu[a] = res
 
       when :MUL
+        emu.cycle += 2
         va, vb = emu[a], emu[b]
         emu[:O] = ((va*vb)>>16)&0xffff
         emu[a] = va * vb
 
       when :DIV # DIV
+        emu.cycle += 3
         va, vb = emu[a], emu[b]
         res = 0
         if vb.zero?
@@ -56,39 +61,49 @@ module RCPU
         emu[a] = res
 
       when :MOD
+        emu.cycle += 3
         va, vb = emu[a], emu[b]
         emu[a] = vb.zero? ? 0 : va % vb
 
       when :SHL
+        emu.cycle += 2
         va, vb = emu[a], emu[b]
         emu[:O] = (va << vb) >> 16
         emu[a] = va << vb
 
       when :SHR
+        emu.cycle += 2
         va, vb = emu[a], emu[b]
         emu[:O] = (va << 16) >> vb
         emu[a] = va >> vb
 
       when :AND
+        emu.cycle += 1
         emu[a] = emu[a] & emu[b]
 
       when :BOR
+        emu.cycle += 1
         emu[a] = emu[a] | emu[b]
 
       when :XOR
+        emu.cycle += 1
         emu[a] = emu[a] ^ emu[b]
 
       when :IFE
-        emu.skip unless emu[a] == emu[b]
+        emu.cycle += 2
+        (emu.cycle += 1) and emu.skip unless emu[a] == emu[b]
 
       when :IFN
-        emu.skip unless emu[a] != emu[b]
+        emu.cycle += 2
+        (emu.cycle += 1) and emu.skip unless emu[a] != emu[b]
 
       when :IFG
-        emu.skip unless emu[a] > emu[b]
+        emu.cycle += 2
+        (emu.cycle += 1) and emu.skip unless emu[a] > emu[b]
 
       when :IFB
-        emu.skip unless (emu[a] & emu[b]) != 0
+        emu.cycle += 2
+        (emu.cycle += 1) and emu.skip unless (emu[a] & emu[b]) != 0
 
       else
         raise "Missing basic: #{name}"
@@ -265,5 +280,4 @@ require 'rcpu/assembler'
 require 'rcpu/emulator'
 require 'rcpu/libraries'
 require 'rcpu/debugger'
-
 
