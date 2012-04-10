@@ -67,8 +67,15 @@ module RCPU
           when "c"
             print "Enter filename: "
             filename = gets.strip
+
+            memory = []
+            @emulator.memory.array.reverse_each do |ele|
+              # It's called flip-flops, and it's black magic
+              memory.unshift(ele) if ele > 0 .. false
+            end
+
             File.open(filename, 'w') do |f|
-              f << @emulator.memory.to_s
+              f << memory.pack('v*')
             end
             puts ">> Saved as #{filename}"
           when "d"
