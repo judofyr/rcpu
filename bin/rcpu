@@ -34,7 +34,7 @@ end
 linker = RCPU::Linker.new
 
 case opts[:format]
-when 'rpcu'
+when 'rcpu'
   lib = linker.find(opts[:filename], Dir.pwd)
   linker.compile_library(lib)
 when 'bin'
