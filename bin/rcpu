@@ -11,19 +11,22 @@ p = T::Parser.new do
 DCPU-16 assembler, emulator, debugger
 
 Usage:
-  bin/rcpu examples/hello.rcpu
-  bin/rcpu examples/hello.bin
-  bin/rcpu examples/hello.s
-  bin/rcpu -b examples/hello
+  bin/rcpu [options] file
 
 Valid extensions:
   .rcpu - Ruby DSL assembler
   .s    - Notch-style assembler
   .bin  - Binary file
 
+Examples:
+  bin/rcpu examples/hello.rcpu
+  bin/rcpu examples/hello.bin
+  bin/rcpu examples/hello.s
+  bin/rcpu -b examples/hello
+
 Available options:
 EOS
-  opt :binary, "Always treat the file as a binary"
+  opt :binary, "Ignore the extension and treat the file as a binary"
 end
 
 formats = %w[bin rcpu]
