@@ -3,12 +3,23 @@ require 'strscan'
 module RCPU
   class ASMParser
     def self.u(arr)
-      Regexp.new('('+arr.map(&:to_s)*'|'+')\b', 'i')
+      Regexp.new('('+arr.map{|x|Regexp.escape(x.to_s)}*'|'+')\b', 'i')
+    end
+
+    def self.b(arr)
+      Regexp.new('('+arr.map{|x|Regexp.escape(x.to_s)}*'|'+')', 'i')
     end
 
     BASIC = u(BasicInstruction::ALL)
     NONBASIC = u(NonBasicInstruction::ALL)
     REGS = u(Register::ALL)
+    ALIAS = {
+      "[SP++]" => :POP,
+      "[SP]"   => :PEEK,
+      "[--SP]" => :PUSH
+    }
+    ISH = b(ALIAS.keys)
+
     SPACE = /[ \t]*/
     NUMBER = /(0x[0-9a-fA-F]{1,4})|\d+/
 
@@ -102,6 +113,8 @@ module RCPU
       @str.skip(/ */)
       res = if reg = @str.scan(REGS)
         Register.new(reg.upcase.to_sym)
+      elsif ish = @str.scan(ISH)
+        Register.new(ALIAS[ish.upcase])
       elsif num = @str.scan(NUMBER)
         Literal.new(Integer(num))
       elsif @str.scan(/\[/)
