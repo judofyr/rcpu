@@ -15,6 +15,16 @@ module RCPU
       @emu.run if run
     end
 
+    def asm(str, run = true)
+      lib = Library.new
+      lib.parse(str)
+      @asmlinker = Linker.new
+      @asmlinker.compile_library(lib)
+      @asmemu = Emulator.new(@asmlinker.finalize)
+      @asmemu.memory.add_extensions(@asmlinker.extensions)
+      @asmemu.run if run
+    end
+
     def debug!
       Debugger.new(@emu, @linker).start
     end

@@ -2,6 +2,7 @@ module RCPU
   class Emulator
     # An Array with bound checking
     class Memory
+      attr_reader :array
       SIZE = 0x10000
 
       def initialize(source)

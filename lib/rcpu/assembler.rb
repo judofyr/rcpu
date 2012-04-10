@@ -3,12 +3,13 @@ require 'rcpu/macros'
 module RCPU
   class Block
     include StandardMacros
+    attr_reader :ins
 
     def initialize(&blk)
       @ins = []
       @data = {}
       @next_newlabel = 0
-      instance_eval(&blk)
+      instance_eval(&blk) if blk
     end
 
     def data(*args)
@@ -113,6 +114,10 @@ module RCPU
     def library(name)
       @libraries << name
     end
+
+    def parse(str)
+      ASMParser.new(self, str).parse
+    end
   end
 
   def self.define(name, &blk)
@@ -164,8 +169,19 @@ module RCPU
     def load_file(file)
       l = Library.new
       l.scope = File.dirname(file)
-      l.instance_eval(File.read(file), file)
+      case ext = File.extname(file)
+      when ".rcpu"
+        l.instance_eval(File.read(file), file)
+      when ".s"
+        l.parse(File.binread(file))
+      else
+        raise AssemblerError, "Unknown file format: #{ext}"
+      end
       @libraries[file] = l
+    end
+
+    def compile(file, scope)
+      compile_library(find(file, scope))
     end
 
     def compile_binary(str)

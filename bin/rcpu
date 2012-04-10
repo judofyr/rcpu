@@ -13,12 +13,17 @@ DCPU-16 assembler, emulator, debugger
 Usage:
   bin/rcpu examples/hello.rcpu
   bin/rcpu examples/hello.bin
-  bin/rcpu -f bin examples/hello
+  bin/rcpu examples/hello.s
+  bin/rcpu -b examples/hello
+
+Valid extensions:
+  .rcpu - Ruby DSL assembler
+  .s    - Notch-style assembler
+  .bin  - Binary file
 
 Available options:
 EOS
-  opt :format, "File format (bin or rcpu). Guessed from filename if not present.",
-    :type => String
+  opt :binary, "Always treat the file as a binary"
 end
 
 formats = %w[bin rcpu]
@@ -27,19 +32,15 @@ opts = nil
 T.with_standard_exception_handling(p) do
   opts = p.parse(ARGV)
   raise T::HelpNeeded unless opts[:filename] = ARGV.shift
-  opts[:format] ||= File.extname(opts[:filename]).sub('.','')
-  p.die :format, "can only be 'bin' or 'rcpu'" unless formats.include?(opts[:format])
+  opts[:binary] ||= File.extname(opts[:filename]) == ".bin"
 end
 
 linker = RCPU::Linker.new
-
-case opts[:format]
-when 'rcpu'
-  lib = linker.find(opts[:filename], Dir.pwd)
-  linker.compile_library(lib)
-when 'bin'
+if opts[:binary]
   linker.extensions << [0x8000, RCPU::ScreenExtension, []]
   linker.compile_binary(File.binread(opts[:filename]))
+else
+  linker.compile(opts[:filename], Dir.pwd)
 end
 
 linker.debugger.start
