@@ -55,6 +55,7 @@ module RCPU
     end
 
     attr_reader :memory, :registers, :next_instruction
+    attr_accessor :cycle
 
     class Immediate < Struct.new(:value)
     end
@@ -63,6 +64,8 @@ module RCPU
       @size = program.size
       @memory = Memory.new(program)
       @registers = Hash.new(0)
+      @cycle = 0
+      @instruction_count = 0
     end
 
     def start; @memory.start end
@@ -89,6 +92,8 @@ module RCPU
           puts "        0x#{hex(@memory[x])}"
         end
       end
+      puts "Cycle: #{@cycle}"
+      puts " Inst: #{@instruction_count}"
     end
 
     def next_instruction
@@ -118,6 +123,7 @@ module RCPU
 
     # Run one instruction
     def tick
+      @instruction_count += 1
       next_instruction[1].execute(self)
       @next_instruction = nil
     end
@@ -191,6 +197,7 @@ module RCPU
         reg = Register.from_code(v - 0x08)
         Indirection.new(reg)
       when 0x10..0x17 # [register + next word]
+        self.cycle += 1
         reg = Register.from_code(v - 0x10)
         PlusRegister.new(reg, @memory[next_word])
       when 0x18 # POP
@@ -206,8 +213,10 @@ module RCPU
       when 0x1D
         Register.new(:O)
       when 0x1E
+        self.cycle += 1
         Indirection.new(Literal.new(@memory[next_word]))
       when 0x1F
+        self.cycle += 1
         Literal.new(@memory[next_word])
       when 0x20..0x3F
         Literal.new(v - 0x20)
