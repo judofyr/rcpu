@@ -1,3 +1,17 @@
+class String
+  def ord; self[0] end unless method_defined?(:ord)
+end
+
+class Hash
+  def key(v) index(v) end unless method_defined?(:key)
+end
+
+class File
+  def self.binread(file)
+    File.open(file, 'rb') { |f| f.read }
+  end unless respond_to?(:binread)
+end
+
 module RCPU
   VERSION = "0.1.0"
 

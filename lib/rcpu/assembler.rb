@@ -18,12 +18,12 @@ module RCPU
         label(name)
       end
 
-      if data.respond_to?(:to_ary)
-        @ins << ByteData.new(data)
-      elsif data.respond_to?(:to_int)
-        @ins << ZeroData.new(data)
-      elsif data.respond_to?(:to_str)
+      if data.is_a?(String)
         @ins << StringData.new(data)
+      elsif data.is_a?(Fixnum)
+        @ins << ZeroData.new(data)
+      elsif data.respond_to?(:each)
+        @ins << ByteData.new(data)
       else
         raise AssemblerError, "unknown data type: #{data.inspect}"
       end

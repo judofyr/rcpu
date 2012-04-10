@@ -56,7 +56,7 @@ module RCPU
           return if input.nil?
 
           input.chomp!
-          cmd = (input.slice!(0) || '').downcase
+          cmd = (input.slice!(0, 1) || '').downcase
           input.strip!
 
           case cmd
