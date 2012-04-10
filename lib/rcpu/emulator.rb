@@ -62,6 +62,7 @@ module RCPU
       @memory = Memory.new(program)
       @registers = Hash.new(0)
       @cycle = 0
+      @instruction_count = 0
     end
 
     def start; @memory.start end
@@ -89,6 +90,7 @@ module RCPU
         end
       end
       puts "Cycle: #{@cycle}"
+      puts " Inst: #{@instruction_count}"
     end
 
     def next_instruction
@@ -118,6 +120,7 @@ module RCPU
 
     # Run one instruction
     def tick
+      @instruction_count += 1
       next_instruction[1].execute(self)
       @next_instruction = nil
     end
