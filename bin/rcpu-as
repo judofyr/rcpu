@@ -18,8 +18,9 @@ Usage:
   rcpu-as [options] file
 
 Valid file extensions:
-  .rcpu - Ruby DSL assembler
-  .s    - Notch-style assembler
+  .rcpu   - Ruby DSL assembler
+  .dasm16 - Notch-style assembler
+  .dasm   - Notch-style assembler
 
 Available options:
 EOS

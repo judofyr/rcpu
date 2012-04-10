@@ -172,7 +172,7 @@ module RCPU
       case ext = File.extname(file)
       when ".rcpu"
         l.instance_eval(File.read(file), file)
-      when ".s"
+      when ".dasm", ".dasm16"
         l.parse(File.binread(file))
       else
         raise AssemblerError, "Unknown file format: #{ext}"

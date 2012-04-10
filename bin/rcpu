@@ -14,14 +14,15 @@ Usage:
   bin/rcpu [options] file
 
 Valid extensions:
-  .rcpu - Ruby DSL assembler
-  .s    - Notch-style assembler
-  .bin  - Binary file
+  .rcpu   - Ruby DSL assembler
+  .dasm   - Notch-style assembler
+  .dasm16 - Notch-style assembler
+  .bin    - Binary file
 
 Examples:
   bin/rcpu examples/hello.rcpu
   bin/rcpu examples/hello.bin
-  bin/rcpu examples/hello.s
+  bin/rcpu examples/hello.dasm
   bin/rcpu -b examples/hello
 
 Available options:
