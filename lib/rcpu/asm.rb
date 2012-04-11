@@ -100,8 +100,22 @@ module RCPU
 
       if @str.scan(/\.library\b/)
         @str.skip(SPACE)
-        name = @str.scan(/\w+/) or error("Unknown library")
-        @lib.library(name.to_sym)
+        if name = @str.scan(/\w+/)
+          name = name.to_sym
+        elsif @str.skip(/"/)
+          name = parse_string
+        else
+          error("Unknown library")
+        end
+
+        @lib.library(name)
+        return
+      end
+
+      if @str.scan(/\.block\b/)
+        @str.skip(SPACE)
+        name = @str.scan(/\w+/) or error("Block name expected")
+        block(name.to_sym)
         return
       end
 
@@ -122,7 +136,11 @@ module RCPU
         @str.scan(/\]/) or error('Missing ]')
         val.is_a?(PlusRegister) ? val : Indirection.new(val)
       elsif label = @str.scan(/\w+/)
-        Label.new(label.to_sym)
+        if label[0] == ?_
+          External.new(label[1..-1].to_sym)
+        else
+          Label.new(label.to_sym)
+        end
       else
         error("Unknown value")
       end
@@ -145,9 +163,8 @@ module RCPU
     def parse_data
       @str.skip(SPACE)
 
-      if @str.scan(/"/)
-        str = @str.scan_until(/"/) or error("Missing \"")
-        str.chop
+      if @str.skip(/"/)
+        parse_string
       elsif num = @str.scan(NUMBER)
         Integer(num).chr
       else
@@ -155,10 +172,16 @@ module RCPU
       end
     end
 
+    def parse_string
+      str = @str.scan_until(/"/) or error("Missing \"")
+      str.chop
+    end
+
     def error(msg)
       parsed = @str.string[0, @str.pos]
       lineno = parsed.count("\n")
-      line = parsed[(parsed.rindex("\n")+1)..-1]
+      start = (parsed.rindex("\n") || -1) + 1
+      line = parsed[start..-1]
       col = line.size
       line << @str.check(/[^\n]*/)
       raise SyntaxError.new(msg, line, lineno, col)

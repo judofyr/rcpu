@@ -1,0 +1,6 @@
+.library "plus1.dasm"
+
+JSR _plus1
+
+:crash SET PC, crash
+

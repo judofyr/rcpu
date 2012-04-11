@@ -1,0 +1,11 @@
+.block main
+  JSR _plus1
+  JSR _plus1
+  JSR _plus1
+
+  :crash SET PC, crash
+
+.block plus1
+  ADD A, 1
+  SET PC, POP
+

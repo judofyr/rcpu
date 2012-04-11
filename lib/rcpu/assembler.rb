@@ -146,7 +146,7 @@ module RCPU
     def gather(library)
       return if @seen_libs[library]
       @seen_libs[library] = true
-      @blocks.update(library.blocks)
+      @blocks.merge!(library.blocks) { |k, v1, v2| v1 }
       @extensions.concat(library.extensions)
       library.libraries.each do |l|
         gather(find(l, library.scope))
