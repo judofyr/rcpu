@@ -276,6 +276,8 @@ module RCPU
         block :main do
           SET a, 1
           ADD [a], 0x1000
+          ADD [a+0xFFFF], 0x1000
+          ADD [a-2], 0x1000
           SUB [a+1], [0x10]
           SET push, o
           SET x, pop
@@ -290,12 +292,14 @@ module RCPU
       res = [
         "SET a, 0x1",
         "ADD [a], 0x1000",
+        "ADD [a-1], 0x1000",
+        "ADD [a-2], 0x1000",
         "SUB [a+1], [0x10]",
         "SET push, o",
         "SET x, pop",
         "SET x, peek",
         "SET x, pc",
-        "JSR 0xC",
+        "JSR 0x12",
         "SUB pc, 0x1"
       ]
 

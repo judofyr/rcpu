@@ -190,6 +190,10 @@ module RCPU
       PlusRegister.new(self, n)
     end
 
+    def -(n)
+      self + -n
+    end
+
     def execute(emu)
       case name
       when *REAL
@@ -227,7 +231,13 @@ module RCPU
 
   class PlusRegister < Struct.new(:register, :value)
     def to_s
-      "[#{register}+#{value}]"
+      v = if value.is_a? Fixnum
+        # Sign extend from 16 bits
+        value | (-value[15] & ~0xFFFF)
+      else
+        value
+      end
+      "[%s%+d]" % [register, v]
     end
 
     def code
