@@ -34,8 +34,9 @@ module RCPU
         end
       end
 
+      decoder = InstructionDecoder.new @emu.memory
       until ins.empty?
-        assert_equal ins.shift, @emu.next_instruction[1]
+        assert_equal ins.shift, decoder.decode(@emu[:PC])[0]
         @emu.tick
       end
     end
@@ -303,8 +304,9 @@ module RCPU
         "SUB pc, 0x1"
       ]
 
+      decoder = InstructionDecoder.new @emu.memory
       until res.empty?
-        assert_equal res.shift, @emu.next_instruction[1].to_s
+        assert_equal res.shift, decoder.decode(@emu[:PC])[0].to_s
         @emu.tick
       end
     end

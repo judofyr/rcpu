@@ -100,6 +100,5 @@ module RCPU
       assert_equal 0x2, memory[0x1]
       assert_equal 0x2, memory[0x1+512+0x1]
     end
-
   end
 end

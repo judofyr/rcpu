@@ -16,6 +16,70 @@ module RCPU
   VERSION = "0.1.0"
 
   class AssemblerError < StandardError; end
+  class DecoderError < StandardError; end
+
+  class InstructionDecoder
+    def initialize memory
+      @memory = memory
+    end
+
+    def decode pc
+      @pc = pc
+      @cycles = 1
+      ins = next_word
+      op = ins & 0xF
+      a = (ins >> 4) & 0x3F
+      b = (ins >> 10) & 0x3F
+      inst = if op == 0
+        NonBasicInstruction.from_code(a, value(b))
+      else
+        BasicInstruction.from_code(op, value(a), value(b))
+      end
+      return inst, @pc, @cycles
+    end
+
+    def next_word
+      @memory[@pc.tap do
+        @pc = (@pc + 1) & 0xFFFF;
+      end]
+    end
+
+    def value(v)
+      case v
+      when 0x00..0x07 # register
+        Register.from_code(v)
+      when 0x08..0x0f # [register]
+        reg = Register.from_code(v - 0x08)
+        Indirection.new(reg)
+      when 0x10..0x17 # [register + next word]
+        @cycles += 1
+        reg = Register.from_code(v - 0x10)
+        PlusRegister.new(reg, next_word)
+      when 0x18 # POP
+        Register.new(:POP)
+      when 0x19 # PEEK
+        Register.new(:PEEK)
+      when 0x1A
+        Register.new(:PUSH)
+      when 0x1B
+        Register.new(:SP)
+      when 0x1C
+        Register.new(:PC)
+      when 0x1D
+        Register.new(:O)
+      when 0x1E
+        @cycles += 1
+        Indirection.new(Literal.new(next_word))
+      when 0x1F
+        @cycles += 1
+        Literal.new(next_word)
+      when 0x20..0x3F
+        Literal.new(v - 0x20)
+      else
+        raise DecoderError.new("Missing value: 0x#{v.to_s(16)}")
+      end
+    end
+  end
 
   class BasicInstruction < Struct.new(:name, :a, :b)
     ALL = %w[SET ADD SUB MUL DIV MOD SHL SHR AND BOR XOR IFE IFN IFG IFB].map(&:to_sym)
@@ -37,6 +101,7 @@ module RCPU
     end
 
     def self.from_code(code, a, b)
+      raise DecoderError.new("Invalid opcode #{code}") if code < 1 or code > ALL.size
       new(ALL[code-1], a, b)
     end
 
@@ -145,6 +210,7 @@ module RCPU
     end
 
     def self.from_code(code, a)
+      raise DecoderError.new("Invalid opcode #{code}") if code < 1 or code > ALL.size
       new(ALL[code - 1], a)
     end
 
