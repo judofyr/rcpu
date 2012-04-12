@@ -101,7 +101,7 @@ module RCPU
     end
 
     def self.from_code(code, a, b)
-      raise DecoderError.new("Invalid opcode #{code}") if code < 1 or code > ALL.size
+      raise DecoderError.new("Invalid basic opcode #{code}") if code < 1 or code > ALL.size
       new(ALL[code-1], a, b)
     end
 
@@ -210,7 +210,7 @@ module RCPU
     end
 
     def self.from_code(code, a)
-      raise DecoderError.new("Invalid opcode #{code}") if code < 1 or code > ALL.size
+      raise DecoderError.new("Invalid nonbasic opcode #{code}") if code < 1 or code > ALL.size
       new(ALL[code - 1], a)
     end
 

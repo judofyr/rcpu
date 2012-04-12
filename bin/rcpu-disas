@@ -48,50 +48,55 @@ while not queue.empty?
   pc = queue.shift
   next if seen_pcs.member? pc
   seen_pcs << pc
-  inst, new_pc = decode pc
 
-  if inst then
-    valid_pcs << pc
-    case inst.name
-    when :SET, :ADD, :SUB
-      if inst.a.is_a? Register and inst.a.name == :PC
-        if inst.b.is_a? Literal
-          target = if inst.name == :SET
-            inst.b.value
-          elsif inst.name == :ADD
-            new_pc + inst.b.value
-          elsif inst.name == :SUB
-            new_pc - inst.b.value
+  begin
+    inst, new_pc = decode pc
+
+    if inst then
+      valid_pcs << pc
+      case inst.name
+      when :SET, :ADD, :SUB
+        if inst.a.is_a? Register and inst.a.name == :PC
+          if inst.b.is_a? Literal
+            target = if inst.name == :SET
+              inst.b.value
+            elsif inst.name == :ADD
+              new_pc + inst.b.value
+            elsif inst.name == :SUB
+              new_pc - inst.b.value
+            end
+            queue << target
+            branch_targets << target
+            inst.b = Label.new(mklabel(target))
+          elsif inst.b.is_a? Register and inst.b.name == :POP
+            # Function return, covered by JSR case.
+          else
+            $stderr.puts "unsupported branch: #{inst}"
           end
+        else
+          queue << new_pc
+        end
+      when :JSR
+        queue << new_pc
+        if inst.a.is_a? Literal
+          target = inst.a.value
           queue << target
           branch_targets << target
-          inst.b = Label.new(mklabel(target))
-        elsif inst.b.is_a? Register and inst.b.name == :POP
-          # Function return, covered by JSR case.
+          inst.a = Label.new(mklabel(target))
         else
           $stderr.puts "unsupported branch: #{inst}"
         end
+      when :IFE, :IFN, :IFG, :IFB
+        _, skip_pc = decode new_pc
+        queue << new_pc
+        queue << skip_pc
+        skippable_pcs << new_pc
       else
         queue << new_pc
       end
-    when :JSR
-      queue << new_pc
-      if inst.a.is_a? Literal
-        target = inst.a.value
-        queue << target
-        branch_targets << target
-        inst.a = Label.new(mklabel(target))
-      else
-        $stderr.puts "unsupported branch: #{inst}"
-      end
-    when :IFE, :IFN, :IFG, :IFB
-      _, skip_pc = decode new_pc
-      queue << new_pc
-      queue << skip_pc
-      skippable_pcs << new_pc
-    else
-      queue << new_pc
     end
+  rescue RCPU::DecoderError
+    puts "decoder error at #{pc}: #{$!.message}"
   end
 end
 
