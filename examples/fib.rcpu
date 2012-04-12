@@ -2,7 +2,7 @@
 block :fib do
   fun do |n|
     IFG 2, n
-      jmp :base
+      SET pc, :base
 
     locals do |first_result, saved_n|
       SET saved_n, n
@@ -14,7 +14,7 @@ block :fib do
       call :_fib, n
       ADD a, first_result
     end
-    jmp :out
+    SET pc, :out
     
     label :base
     fail unless a == n

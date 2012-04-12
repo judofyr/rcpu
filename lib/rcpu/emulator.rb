@@ -54,7 +54,7 @@ module RCPU
       def slice(*a) @array.slice(*a) end
     end
 
-    attr_reader :memory, :registers, :next_instruction
+    attr_reader :memory, :registers
     attr_accessor :cycle
 
     class Immediate < Struct.new(:value)
@@ -63,6 +63,7 @@ module RCPU
     def initialize(program)
       @size = program.size
       @memory = Memory.new(program)
+      @decoder = InstructionDecoder.new(@memory)
       @registers = Hash.new(0)
       @cycle = 0
       @instruction_count = 0
@@ -96,41 +97,17 @@ module RCPU
       puts " Inst: #{@instruction_count}"
     end
 
-    def next_instruction
-      @next_instruction ||= [self[:PC], send(*dispatch)]
-    end
-
-    def next_word
-      @registers[:PC].tap do
-        @registers[:PC] = (@registers[:PC] + 1) & 0xFFFF;
-      end
-    end
-
-    def dispatch
-      current = next_word
-
-      ins = @memory[current]
-      if (op = ins & 0xF).zero?
-        op = (ins >> 4) & 0x3F
-        a = (ins >> 10) & 0x3F
-        [:non_basic, op, value(a)]
-      else
-        a = (ins >> 4) & 0x3F
-        b = (ins >> 10) & 0x3F
-        [:basic, op, value(a), value(b)]
-      end
-    end
-
     # Run one instruction
     def tick
       @instruction_count += 1
-      next_instruction[1].execute(self)
-      @next_instruction = nil
+      inst, @registers[:PC], cycles = @decoder.decode @registers[:PC]
+      inst.execute(self)
+      @cycle += cycles
     end
 
     # Skip one instruction
     def skip
-      dispatch
+      _, @registers[:PC], _ = @decoder.decode @registers[:PC]
     end
 
     def run
@@ -142,14 +119,6 @@ module RCPU
 
     def run_forever
       tick while true
-    end
-
-    def basic(op, a, b)
-      BasicInstruction.from_code(op, a, b)
-    end
-
-    def non_basic(op, a)
-      NonBasicInstruction.from_code(op, a)
     end
 
     def [](k)
@@ -186,42 +155,6 @@ module RCPU
         @registers[k] = v
       else
         raise "Missing set: #{k}"
-      end
-    end
-
-    def value(v)
-      case v
-      when 0x00..0x07 # register
-        Register.from_code(v)
-      when 0x08..0x0f # [register]
-        reg = Register.from_code(v - 0x08)
-        Indirection.new(reg)
-      when 0x10..0x17 # [register + next word]
-        self.cycle += 1
-        reg = Register.from_code(v - 0x10)
-        PlusRegister.new(reg, @memory[next_word])
-      when 0x18 # POP
-        Register.new(:POP)
-      when 0x19 # PEEK
-        Register.new(:PEEK)
-      when 0x1A
-        Register.new(:PUSH)
-      when 0x1B
-        Register.new(:SP)
-      when 0x1C
-        Register.new(:PC)
-      when 0x1D
-        Register.new(:O)
-      when 0x1E
-        self.cycle += 1
-        Indirection.new(Literal.new(@memory[next_word]))
-      when 0x1F
-        self.cycle += 1
-        Literal.new(@memory[next_word])
-      when 0x20..0x3F
-        Literal.new(v - 0x20)
-      else
-        raise "Missing value: 0x#{v.to_s(16)}"
       end
     end
   end
